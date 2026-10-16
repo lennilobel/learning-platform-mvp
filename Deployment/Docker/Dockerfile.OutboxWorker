@@ -1,0 +1,52 @@
+# =====================================================================================
+# Multi-stage Docker file for creating the OutboxWorker microservice image
+# =====================================================================================
+#
+# Execute with:
+#   cd C:\Projects\Sleek\gspt-learning-platform
+#   docker build -f Deployment\Docker\Dockerfile.OutboxWorker -t learning-platform-outbox-worker:phase13 .
+#
+# Then:
+#   docker run ^
+#       --name learning-platform-outbox-worker-docker ^
+#       --env-file Deployment\Docker\learning-platform.env ^
+#       --env-file Deployment\Docker\learning-platform.secrets.env ^
+#       learning-platform-outbox-worker:phase13
+
+# Build stage
+FROM mcr.microsoft.com/dotnet/sdk:10.0 AS build
+
+WORKDIR /src
+
+# Copy project files first so that NuGet restore can be cached independently from changes to the source code.
+COPY LearningPlatform/LearningPlatform.BusinessLogic/LearningPlatform.BusinessLogic.csproj ./LearningPlatform.BusinessLogic/
+COPY LearningPlatform/LearningPlatform.DataLayer/LearningPlatform.DataLayer.csproj ./LearningPlatform.DataLayer/
+COPY LearningPlatform/LearningPlatform.Infrastructure/LearningPlatform.Infrastructure.csproj ./LearningPlatform.Infrastructure/
+COPY LearningPlatform/LearningPlatform.Shared/LearningPlatform.Shared.csproj ./LearningPlatform.Shared/
+COPY LearningPlatform/LearningPlatform.OutboxWorker/LearningPlatform.OutboxWorker.csproj ./LearningPlatform.OutboxWorker/
+
+# Restore the Outbox Worker and all of its referenced projects.
+RUN dotnet restore LearningPlatform.OutboxWorker/LearningPlatform.OutboxWorker.csproj
+
+# Copy the source code for the worker and all projects in its dependency graph.
+COPY LearningPlatform/LearningPlatform.BusinessLogic/ ./LearningPlatform.BusinessLogic/
+COPY LearningPlatform/LearningPlatform.DataLayer/ ./LearningPlatform.DataLayer/
+COPY LearningPlatform/LearningPlatform.Infrastructure/ ./LearningPlatform.Infrastructure/
+COPY LearningPlatform/LearningPlatform.Shared/ ./LearningPlatform.Shared/
+COPY LearningPlatform/LearningPlatform.OutboxWorker/ ./LearningPlatform.OutboxWorker/
+
+# Publish the dedicated Outbox Worker executable.
+RUN dotnet publish \
+    LearningPlatform.OutboxWorker/LearningPlatform.OutboxWorker.csproj \
+    -c Release \
+    -o /app/publish \
+    --no-restore
+
+# Runtime stage
+FROM mcr.microsoft.com/dotnet/runtime:10.0 AS final
+
+WORKDIR /app
+
+COPY --from=build /app/publish .
+
+ENTRYPOINT ["dotnet", "LearningPlatform.OutboxWorker.dll"]

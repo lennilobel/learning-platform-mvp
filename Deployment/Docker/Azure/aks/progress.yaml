@@ -1,0 +1,51 @@
+# AKS deployment for the Learning Progress background worker.
+#
+# Deployment
+#     ↓ maintains
+# Pod
+#     ↓ contains
+# Learning Progress Worker container
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: learning-platform-progress
+  namespace: learning-platform
+
+spec:
+  replicas: 1
+
+  selector:
+    matchLabels:
+      app: learning-platform-progress
+
+  template:
+    metadata:
+      labels:
+        app: learning-platform-progress
+        # Enable the Azure Workload Identity feature for this pod.
+        azure.workload.identity/use: "true"
+
+    spec:
+      # Use the service account to access Azure resources (connect this pod to the identity plumbing in Azure).
+      serviceAccountName: sa-learningplatform-progress
+
+      containers:
+        - name: learning-platform-progress
+          image: sleeklearningplatformacr-deh8ashubsbdbtax.azurecr.io/learning-platform-learning-progress-worker:phase13
+
+          env:
+            - name: DOTNET_ENVIRONMENT
+              value: Development
+
+            - name: ConnectionStrings__LearningPlatform
+              value: "Server=tcp:lennidemo.database.windows.net,1433;Initial Catalog=LearningPlatform;Encrypt=True;TrustServerCertificate=False;Authentication=Active Directory Default"
+
+            - name: ServiceBus__FullyQualifiedNamespace
+              value: "sb-learningplatform.servicebus.windows.net"
+
+            - name: ServiceBus__EnrollmentCreatedTopic
+              value: "enrollment-created"
+
+            - name: ServiceBus__LearningProgressSubscription
+              value: "learning-progress"

@@ -1,0 +1,6 @@
+@LearningPlatform.EnrollmentApi_HostAddress = http://localhost:5236
+
+GET {{LearningPlatform.EnrollmentApi_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###

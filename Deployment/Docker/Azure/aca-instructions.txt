@@ -1,0 +1,20 @@
+:View the logs of the container app in real-time using the Azure CLI. The following command retrieves the last 100 lines of logs from the specified container app:
+
+az containerapp logs show ^
+  --resource-group demos-rg ^
+  --name ca-learningplatform-api ^
+  --type console ^
+  --tail 100
+
+az containerapp logs show ^
+  --resource-group demos-rg ^
+  --name ca-learningplatform-outbox ^
+  --type console ^
+  --tail 100
+
+az containerapp logs show ^
+  --resource-group demos-rg ^
+  --name ca-learningplatform-progress ^
+  --type console ^
+  --tail 100 ^
+  --follow

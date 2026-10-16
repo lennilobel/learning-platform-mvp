@@ -1,0 +1,48 @@
+<Solution>
+  <Folder Name="/Business Logic/">
+    <Project Path="LearningPlatform.BusinessLogic.Tests/LearningPlatform.BusinessLogic.Tests.csproj" Id="80b83c60-dc6b-4831-9866-2a4b75582311" />
+    <Project Path="LearningPlatform.BusinessLogic/LearningPlatform.BusinessLogic.csproj" />
+  </Folder>
+  <Folder Name="/Data/">
+    <Project Path="LearningPlatform.Database/LearningPlatform.Database.sqlproj" Id="05cd6fde-37dc-4e34-885b-13a872deabaf">
+      <Build />
+      <Deploy />
+    </Project>
+    <Project Path="LearningPlatform.DataLayer/LearningPlatform.DataLayer.csproj" />
+  </Folder>
+  <Folder Name="/Recommendations/">
+    <Project Path="LearningPlatform.Recommendations.Agent.Console/LearningPlatform.Recommendations.Agent.Console.csproj" Id="c4b5b113-e92d-4bba-97e7-e1d57978eb76" />
+    <Project Path="LearningPlatform.Recommendations.Agent/LearningPlatform.Recommendations.Agent.csproj" Id="13c50721-d310-4d81-9e43-37fb2f97225a" />
+    <Project Path="LearningPlatform.Recommendations.Tests/LearningPlatform.Recommendations.Tests.csproj" Id="0eb84f21-cbab-49b5-9459-5dcebd9dd5d4" />
+    <Project Path="LearningPlatform.Recommendations/LearningPlatform.Recommendations.csproj" Id="d7e442a1-9f5b-4c0e-8776-40180f6b7fc5" />
+  </Folder>
+  <Folder Name="/Workers &amp; Functions/">
+    <Project Path="LearningPlatform.LearningProgressFunction/LearningPlatform.LearningProgressFunction.csproj" Id="888a7568-61e4-4be8-b69f-53f69d7ad705" />
+    <Project Path="LearningPlatform.LearningProgressWorker/LearningPlatform.LearningProgressWorker.csproj" Id="c9f48626-cd9d-4c2c-a6bb-643f1bc7691f" />
+    <Project Path="LearningPlatform.OutboxWorker/LearningPlatform.OutboxWorker.csproj" Id="a19adc47-09c5-48a8-9251-475a996e0509" />
+  </Folder>
+  <Project Path="learning-platform-ui/" Type="Website" DisplayName="learning-platform-ui">
+    <BuildType Project="Debug" />
+    <Properties Name="WebsiteProperties">
+      <Property Name="Debug.AspNetCompiler.Debug" Value="&quot;True&quot;" />
+      <Property Name="Debug.AspNetCompiler.FixedNames" Value="&quot;false&quot;" />
+      <Property Name="Debug.AspNetCompiler.ForceOverwrite" Value="&quot;true&quot;" />
+      <Property Name="Debug.AspNetCompiler.PhysicalPath" Value="&quot;learning-platform-ui\&quot;" />
+      <Property Name="Debug.AspNetCompiler.TargetPath" Value="&quot;PrecompiledWeb\localhost_50111\&quot;" />
+      <Property Name="Debug.AspNetCompiler.Updateable" Value="&quot;true&quot;" />
+      <Property Name="Debug.AspNetCompiler.VirtualPath" Value="&quot;/localhost_50111&quot;" />
+      <Property Name="Release.AspNetCompiler.Debug" Value="&quot;False&quot;" />
+      <Property Name="Release.AspNetCompiler.FixedNames" Value="&quot;false&quot;" />
+      <Property Name="Release.AspNetCompiler.ForceOverwrite" Value="&quot;true&quot;" />
+      <Property Name="Release.AspNetCompiler.PhysicalPath" Value="&quot;learning-platform-ui\&quot;" />
+      <Property Name="Release.AspNetCompiler.TargetPath" Value="&quot;PrecompiledWeb\localhost_50111\&quot;" />
+      <Property Name="Release.AspNetCompiler.Updateable" Value="&quot;true&quot;" />
+      <Property Name="Release.AspNetCompiler.VirtualPath" Value="&quot;/localhost_50111&quot;" />
+      <Property Name="TargetFrameworkMoniker" Value="&quot;.NETFramework,Version%3Dv4.8&quot;" />
+      <Property Name="VWDPort" Value="&quot;50111&quot;" />
+    </Properties>
+  </Project>
+  <Project Path="LearningPlatform.EnrollmentApi/LearningPlatform.EnrollmentApi.csproj" />
+  <Project Path="LearningPlatform.Infrastructure/LearningPlatform.Infrastructure.csproj" Id="0102fb18-de26-490c-812b-831741bccb39" />
+  <Project Path="LearningPlatform.Shared/LearningPlatform.Shared.csproj" />
+</Solution>

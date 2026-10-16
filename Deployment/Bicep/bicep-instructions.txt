@@ -1,0 +1,30 @@
+•	resource    = an Azure resource to manage
+•	param       = value supplied by the deployment
+•	var         = calculated/internal value
+•	output      = value returned by the deployment
+•	existing    = resource that already exists but isn't created here
+•	module      = reusable/composable Bicep file
+•	what-if     = preview the changes before applying them
+
+
+cd C:\Projects\Sleek\gspt-learning-platform\Deployment\Bicep
+az bicep install
+az bicep version
+
+-- Compile/validate the Bicep file to an ARM template (JSON)
+az bicep build --file main.bicep
+
+-- If I deploy the Bicep file, what will change in Azure?
+az deployment group what-if --resource-group demos-rg --template-file main.bicep
+az deployment group what-if --resource-group demos-rg --template-file main.bicep --parameters learningPlatformConnectionString="Server=tcp:lennidemo.database.windows.net,1433;Initial Catalog=LearningPlatform;Encrypt=True;TrustServerCertificate=False;Authentication=Active Directory Default"
+
+
+-- Deploy the Bicep file to Azure
+az deployment group create --resource-group demos-rg --template-file main.bicep --name learningplatform-bicep
+az deployment group create --resource-group demos-rg --template-file main.bicep --name learningplatform-bicep --parameters learningPlatformConnectionString="Server=tcp:lennidemo.database.windows.net,1433;Initial Catalog=LearningPlatform;Encrypt=True;TrustServerCertificate=False;Authentication=Active Directory Default"
+
+
+
+-- Export the resource group to a JSON file (ARM template), then decompile it to a Bicep file
+az group export --name demos-rg > LearningPlatformReverseEngineered.json
+az bicep decompile --file LearningPlatformReverseEngineered.json

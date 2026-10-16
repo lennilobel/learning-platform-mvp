@@ -1,0 +1,24 @@
+# docker compose -f Deployment\Docker\compose.yaml up
+# docker compose -f Deployment\Docker\compose.yaml down
+
+services:
+
+  enrollment-api:
+    image: learning-platform-api-only:phase13
+    ports:
+      - "8080:8080"
+    env_file:
+      - learning-platform.env
+      - learning-platform.secrets.env
+
+  outbox-worker:
+    image: learning-platform-outbox-worker:phase13
+    env_file:
+      - learning-platform.env
+      - learning-platform.secrets.env
+
+  learning-progress-worker:
+    image: learning-platform-learning-progress-worker:phase13
+    env_file:
+      - learning-platform.env
+      - learning-platform.secrets.env

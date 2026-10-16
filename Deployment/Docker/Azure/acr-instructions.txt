@@ -1,0 +1,39 @@
+cd C:\Projects\Sleek\gspt-learning-platform
+
+:First, authenticate Docker to this registry using the registry resource name:
+az acr login --name sleeklearningplatformacr
+
+:You should eventually get:
+:Login Succeeded
+
+:Then get Azure to tell us the exact generated login-server hostname so we don't have to transcribe that long value from the portal:
+az acr show --name sleeklearningplatformacr --query loginServer -o tsv
+
+:Shows:
+sleeklearningplatformacr-deh8ashubsbdbtax.azurecr.io
+
+:Now tag the three local images with that registry prefix:
+docker tag learning-platform-api-only:phase13 sleeklearningplatformacr-deh8ashubsbdbtax.azurecr.io/learning-platform-api-only:phase13
+docker tag learning-platform-outbox-worker:phase13 sleeklearningplatformacr-deh8ashubsbdbtax.azurecr.io/learning-platform-outbox-worker:phase13
+docker tag learning-platform-learning-progress-worker:phase13 sleeklearningplatformacr-deh8ashubsbdbtax.azurecr.io/learning-platform-learning-progress-worker:phase13
+
+:Then push the three images to the registry:
+docker push sleeklearningplatformacr-deh8ashubsbdbtax.azurecr.io/learning-platform-api-only:phase13
+docker push sleeklearningplatformacr-deh8ashubsbdbtax.azurecr.io/learning-platform-outbox-worker:phase13
+docker push sleeklearningplatformacr-deh8ashubsbdbtax.azurecr.io/learning-platform-learning-progress-worker:phase13
+
+:Verify that the images are now in the registry:
+az acr repository list --name sleeklearningplatformacr -o table
+
+:Expected output:
+:learning-platform-api-only
+:learning-platform-outbox-worker
+:learning-platform-learning-progress-worker
+
+:Verify the tags
+az acr repository show-tags --name sleeklearningplatformacr --repository learning-platform-api-only -o table
+az acr repository show-tags --name sleeklearningplatformacr --repository learning-platform-outbox-worker -o table
+az acr repository show-tags --name sleeklearningplatformacr --repository learning-platform-learning-progress-worker -o table
+
+:Expected output:
+:phase13

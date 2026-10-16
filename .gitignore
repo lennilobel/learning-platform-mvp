@@ -10,6 +10,9 @@
 *.userosscache
 *.sln.docstates
 *.env
+*.env
+!/Deployment/Docker/learning-platform.env
+!/Deployment/Docker/learning-platform.secrets.env.example
 
 # User-specific files (MonoDevelop/Xamarin Studio)
 *.userprefs
@@ -426,3 +429,6 @@ FodyWeavers.xsd
 
 # Official VS Code C# Dev Kit Extension exclusion
 #*.lscache
+#/LearningPlatform/learning-platform-ui/package-lock.json		# We need it in source control for CI purposes
+/LearningPlatform/LearningPlatform.EnrollmentApi/wwwroot/
+/LearningPlatform/LearningPlatform.EnrollmentApi/deploy.zip

@@ -1,0 +1,18 @@
+cd C:\Projects\Sleek\gspt-learning-platform\LearningPlatform
+
+
+If React changed:
+
+cd .\learning-platform-ui
+npm.cmd run build
+cd ..
+
+
+To deploy the API:
+
+cd .\LearningPlatform.EnrollmentApi
+dotnet publish -c Release -r linux-x64 --self-contained false -o .\publish
+tar.exe -a -c -f .\deploy.zip -C .\publish .
+az login
+az webapp deploy --resource-group demos-rg --name app-learningplatform-api --src-path deploy.zip --type zip
+del deploy.zip

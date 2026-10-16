@@ -1,0 +1,79 @@
+# There are two k8s resources defined in this file: a Deployment and a Service.
+#
+#   Deployment
+#       ↓ maintains
+#   Pod
+#       ↓ contains
+#   API container
+#   
+#   Service
+#       ↓ stable network endpoint
+#   API pods
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: learning-platform-api
+  namespace: learning-platform
+
+spec:
+  replicas: 1
+
+  selector:
+    matchLabels:
+      app: learning-platform-api
+
+  template:
+    metadata:
+      labels:
+        app: learning-platform-api
+        # Enable the Azure Workload Identity feature for this pod.
+        azure.workload.identity/use: "true"
+
+    spec:
+      # Use the service account to access Azure resources (connect this pod to the identity plumbing in Azure).
+      serviceAccountName: sa-learningplatform-api
+
+      containers:
+        - name: learning-platform-api
+          image: sleeklearningplatformacr-deh8ashubsbdbtax.azurecr.io/learning-platform-api-only:phase13
+
+          ports:
+            - containerPort: 8080
+
+          env:
+            - name: ASPNETCORE_ENVIRONMENT
+              value: Development
+
+            - name: DOTNET_ENVIRONMENT
+              value: Development
+
+            - name: ConnectionStrings__LearningPlatform
+              value: "Server=tcp:lennidemo.database.windows.net,1433;Initial Catalog=LearningPlatform;Encrypt=True;TrustServerCertificate=False;Authentication=Active Directory Default"
+
+            - name: Entra__Instance
+              value: "https://login.microsoftonline.com/"
+
+            - name: Entra__TenantId
+              value: "6128879d-86d5-4470-aa2b-77e84c83aa56"
+
+            - name: Entra__ClientId
+              value: "964b4c3a-58d4-4511-a180-06b97dba72eb"
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: learning-platform-api
+  namespace: learning-platform
+
+spec:
+  selector:
+    app: learning-platform-api
+
+  # Provide a stable cluster-internal endpoint for the API pods.
+  ports:
+    - port: 8080
+      targetPort: 8080
+
+  type: ClusterIP

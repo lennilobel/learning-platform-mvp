@@ -1,0 +1,237 @@
+:	Cluster
+:	├─ Namespaces
+:	│  ├─ learning-platform
+:	│  │  ├─ API Pod
+:	│  │  ├─ Outbox Pod
+:	│  │  └─ Progress Pod
+:	│  └─ kube-system
+:	│     └─ system Pods
+:	│
+:	└─ Nodes (VMs)
+:	   ├─ Node 1
+:	   │  ├─ some learning-platform Pods
+:	   │  └─ some kube-system Pods
+:	   └─ Node 2
+:	      ├─ other learning-platform Pods
+:	      └─ other kube-system Pods
+
+
+
+:Step 1 - create the AKS cluster
+
+:Verify you are logged in to the correct Azure subscription. If you have multiple subscriptions, switch to the one you want to use:
+az account show --query "{Subscription:name, SubscriptionId:id}" -o table
+
+:Verify that the Microsoft.ContainerService provider is registered on the subscription.
+az provider show ^
+  --namespace Microsoft.ContainerService ^
+  --query registrationState ^
+  -o tsv
+
+ :If it’s not, register it:
+ az provider register ^
+  --namespace Microsoft.ContainerService ^
+  --wait
+
+:Now create the cluster. For this learning deployment we’ll use one node to control cost, even though production AKS normally
+:uses multiple nodes for availability. I’m choosing Standard_D4ds_v5 so we have enough room for Kubernetes system pods plus your
+:three workloads; Microsoft recommends at least that class for dev/test system nodes. The AKS Free tier removes the
+:cluster-management charge, but the VM node is still billable.
+az aks create ^
+  --resource-group demos-rg ^
+  --name aks-learningplatform ^
+  --location centralus ^
+  --tier free ^
+  --node-count 1 ^
+  --node-vm-size Standard_D4ds_v5 ^
+  --enable-oidc-issuer ^
+  --enable-workload-identity ^
+  --attach-acr sleeklearningplatformacr ^
+  --generate-ssh-keys
+
+:This asks Azure to build:
+:	aks-learningplatform
+:	  1 Linux VM node
+:	  Kubernetes control plane
+:	  OIDC issuer
+:	  Workload Identity support
+:	  permission to pull images from our ACR
+:
+:The two identity switches are important:
+:	--enable-oidc-issuer
+:	--enable-workload-identity
+:
+:They’re what will eventually let your pods authenticate to Azure SQL and Service Bus without client secrets, while still allowing each workload
+:to have different permissions. Microsoft’s current AKS guidance uses these features for Entra Workload Identity.
+:
+:--attach-acr handles a different identity problem: it gives the AKS kubelet permission to pull your private Docker images from sleeklearningplatformacr.
+:That is infrastructure/image-pull identity, not your application's runtime identity.
+:
+:The response to this command will include a lot of information about the cluster, including the OIDC issuer URL. Notably:
+:	ProvisioningState:     Succeeded
+:	Node count:            1
+:	VM size:               Standard_D4ds_v5
+:	Kubernetes:            1.35.8
+:	OIDC issuer:           Enabled
+:	Workload Identity:     Enabled
+:	AKS tier:              Free
+:	
+:...and two different identities:
+:	AKS cluster identity
+:	  principalId: c94c4480-...
+:	
+:	AKS kubelet identity
+:	  clientId: eb4291c3-...
+
+
+:Next, we need to get the kubeconfig file for this cluster so we can use kubectl to manage it.
+:The following command will merge the new cluster’s credentials into your existing kubeconfig file (or create one if you don’t have one yet).
+:You can then use kubectl to manage the cluster.
+az aks get-credentials ^
+  --resource-group demos-rg ^
+  --name aks-learningplatform
+
+:Verify that kubectl can see the cluster and its node(s):
+kubectl get nodes
+
+:Now verify that the cluster is running and healthy.
+:The following command shows all pods in all namespaces, which should include the system pods that AKS runs to manage the cluster.
+:A namespace is a Kubernetes grouping of pods, and AKS runs its system pods in the kube-system namespace.
+:You should see those pods running, plus any other pods you deploy.
+kubectl get pods --all-namespaces
+
+:Create a namespace for our workloads.
+kubectl create namespace learning-platform
+
+:Make that namespace the default for kubectl commands so you don’t have to specify it each time.
+kubectl config set-context --current --namespace=learning-platform
+
+:Verify that the default namespace is set to learning-platform.
+kubectl config view --minify --output "jsonpath={..namespace}"
+
+:Each of the three workloads needs its own Azure identity.
+:In AKS that means user-assigned managed identity + Kubernetes ServiceAccount + federated credential rather than ACA’s system-assigned identity.
+:
+:With AKS Workload Identity, there are three pieces to keep straight:
+:	Azure user-assigned managed identity
+:	            ↕ federated trust
+:	Kubernetes ServiceAccount
+:	            ↓
+:	Pod
+:
+:Create the three user-assigned managed identities for the three workloads, and capture their names, client IDs, and principal IDs for later use.
+az identity create ^
+  --resource-group demos-rg ^
+  --location centralus ^
+  --name uami-learningplatform-api-aks ^
+  --query "{Name:name, ClientId:clientId, PrincipalId:principalId}" ^
+  -o table
+
+az identity create ^
+  --resource-group demos-rg ^
+  --location centralus ^
+  --name uami-learningplatform-outbox-aks ^
+  --query "{Name:name, ClientId:clientId, PrincipalId:principalId}" ^
+  -o table
+
+az identity create ^
+  --resource-group demos-rg ^
+  --location centralus ^
+  --name uami-learningplatform-progress-aks ^
+  --query "{Name:name, ClientId:clientId, PrincipalId:principalId}" ^
+  -o table
+: 
+: Name                                ClientId                              PrincipalId
+: ----------------------------------  ------------------------------------  ------------------------------------
+: uami-learningplatform-api-aks       7cbe1f11-8be8-43df-8b2f-6610a3723374  f34c5fb8-359b-4224-b277-aa1f54fd40fe
+: uami-learningplatform-outbox-aks    8341de90-2274-44f0-9658-3d4c9d4082b1  af77e64a-de8a-4db7-8998-578c1975a968
+: uami-learningplatform-progress-aks  ea7d019b-3278-4ea4-b3fd-880f0512d0ab  e1d0bd8c-dcf2-4097-8ca8-fd757825193d
+:
+:	Client ID     → "Which identity should my application use?"
+:	Principal ID  → "Which identity object am I granting permissions to?"
+:
+:Create the three Kubernetes ServiceAccounts that will be used by the three workloads.
+:Each ServiceAccount will be linked to its corresponding Azure identity via a federated credential.
+kubectl create serviceaccount sa-learningplatform-api
+kubectl create serviceaccount sa-learningplatform-outbox
+kubectl create serviceaccount sa-learningplatform-progress
+
+:Annotate each ServiceAccount with the client ID of its corresponding Azure identity.
+kubectl annotate serviceaccount sa-learningplatform-api      azure.workload.identity/client-id=7cbe1f11-8be8-43df-8b2f-6610a3723374
+kubectl annotate serviceaccount sa-learningplatform-outbox   azure.workload.identity/client-id=8341de90-2274-44f0-9658-3d4c9d4082b1
+kubectl annotate serviceaccount sa-learningplatform-progress azure.workload.identity/client-id=ea7d019b-3278-4ea4-b3fd-880f0512d0ab
+
+:Verify
+kubectl get serviceaccounts
+
+:We have not yet established trust between Kubernetes and Microsoft Entra.
+:That’s the next step: create three federated identity credentials so Azure will trust tokens issued to those ServiceAccounts by your AKS cluster.
+:We'll need this AKS cluster's OIDC issuer URL for that, which is available in the AKS cluster properties in the portal, or by running:
+az aks show -g demos-rg -n aks-learningplatform --query "oidcIssuerProfile.issuerUrl" -o tsv
+
+https://centralus.oic.prod-aks.azure.com/6128879d-86d5-4470-aa2b-77e84c83aa56/858c5837-f182-4a2b-9ae9-941c46731a09/
+
+:Now create the three federated credentials, one for each workload. Each credential links a ServiceAccount to its corresponding Azure identity.
+:The critical field is the subject, which is the ServiceAccount’s full name in the format system:serviceaccount:<namespace>:<serviceaccount-name>.
+:   system:serviceaccount:learning-platform:sa-learningplatform-api
+:                         ^ namespace       ^ ServiceAccount
+:
+az identity federated-credential create ^
+  --resource-group demos-rg ^
+  --identity-name uami-learningplatform-api-aks ^
+  --name fic-learningplatform-api ^
+  --issuer "https://centralus.oic.prod-aks.azure.com/6128879d-86d5-4470-aa2b-77e84c83aa56/858c5837-f182-4a2b-9ae9-941c46731a09/" ^
+  --subject "system:serviceaccount:learning-platform:sa-learningplatform-api" ^
+  --audiences "api://AzureADTokenExchange"
+
+az identity federated-credential create ^
+  --resource-group demos-rg ^
+  --identity-name uami-learningplatform-outbox-aks ^
+  --name fic-learningplatform-outbox ^
+  --issuer "https://centralus.oic.prod-aks.azure.com/6128879d-86d5-4470-aa2b-77e84c83aa56/858c5837-f182-4a2b-9ae9-941c46731a09/" ^
+  --subject "system:serviceaccount:learning-platform:sa-learningplatform-outbox" ^
+  --audiences "api://AzureADTokenExchange"
+
+az identity federated-credential create ^
+  --resource-group demos-rg ^
+  --identity-name uami-learningplatform-progress-aks ^
+  --name fic-learningplatform-progress ^
+  --issuer "https://centralus.oic.prod-aks.azure.com/6128879d-86d5-4470-aa2b-77e84c83aa56/858c5837-f182-4a2b-9ae9-941c46731a09/" ^
+  --subject "system:serviceaccount:learning-platform:sa-learningplatform-progress" ^
+  --audiences "api://AzureADTokenExchange"
+
+:The chain of trust now looks like this:
+:	API Pod
+:	  ↓ uses
+:	sa-learningplatform-api
+:	  ↓ federated trust
+:	uami-learningplatform-api-aks
+:	  ↓ Azure permissions
+:	SQL / other Azure resources
+
+:Now the YAML files
+cd Deployment\Docker\Azure\Kubernetes
+
+:API
+kubectl apply -f api.yaml
+kubectl logs deployment/learning-platform-api --follow
+
+: (and then, in a separate command window)
+kubectl port-forward service/learning-platform-api 8080:8080
+
+:Outbox
+kubectl apply -f outbox.yaml
+kubectl logs deployment/learning-platform-outbox --follow
+
+:Progress
+kubectl apply -f progress.yaml
+kubectl logs deployment/learning-platform-progress --follow
+
+:Show the deployments, pods, and services in the learning-platform namespace.
+kubectl get deployments
+kubectl get pods
+kubectl get services
+
+:Kill the API pod and watch a new replica come online automatically
+kubectl get pods
+kubectl delete pod learning-platform-api-7c87998f49-hscjf

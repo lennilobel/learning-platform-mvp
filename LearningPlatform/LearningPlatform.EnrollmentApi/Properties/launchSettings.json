@@ -1,0 +1,24 @@
+﻿{
+	"$schema": "https://json.schemastore.org/launchsettings.json",
+	"profiles": {
+		"http": {
+			"commandName": "Project",
+			"dotnetRunMessages": true,
+			"launchBrowser": false,
+			"applicationUrl": "http://localhost:5236",
+			"environmentVariables": {
+				"ASPNETCORE_ENVIRONMENT": "Development"
+			}
+		},
+		"https": {
+			"commandName": "Project",
+			"dotnetRunMessages": true,
+			"launchBrowser": false,
+			"applicationUrl": "https://localhost:7265;http://localhost:5236",
+			"environmentVariables": {
+				"ASPNETCORE_ENVIRONMENT": "Development",
+				"AZURE_TOKEN_CREDENTIALS": "dev"	// so that DefaultAzureCredential restricxts itself to developer-tool creds instead of trying Managed Identity
+			}
+		}
+	}
+}

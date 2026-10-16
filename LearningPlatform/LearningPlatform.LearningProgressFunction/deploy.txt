@@ -1,0 +1,9 @@
+cd C:\Projects\Sleek\gspt-learning-platform\LearningPlatform\LearningPlatform.LearningProgressFunction
+
+build the .NET isolated Function
+→ package the deployable output
+→ upload it using the Flex Consumption deployment mechanism
+→ update the Function App
+→ synchronize the Service Bus trigger
+
+func azure functionapp publish func-learningplatform-learningprogress
