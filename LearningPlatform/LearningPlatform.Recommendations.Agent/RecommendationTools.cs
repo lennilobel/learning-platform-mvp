@@ -1,104 +1,85 @@
 ﻿using System.ComponentModel;
 using System.Text.Json;
-using LearningPlatform.Recommendations.Models;
 
 namespace LearningPlatform.Recommendations.Agent
 {
 	public sealed class RecommendationTools
 	{
 		private readonly IRecommendationService _recommendationService;
+		private readonly DemoLearningData _learningData;
 
-		public RecommendationTools(IRecommendationService recommendationService)
+		public RecommendationTools(
+			IRecommendationService recommendationService,
+			DemoLearningData learningData)
 		{
 			this._recommendationService = recommendationService;
+			this._learningData = learningData;
 		}
 
-		[Description("Gets ranked course recommendations for a learner. Only courses that satisfy deterministic eligibility rules are returned.")]
+		// Note the use of the [Description] attribute. Traditionally, the [Description] attribute
+		// provided descriptive metadata for reflection-based tooling and component frameworks (e.g.,
+		// property browsers and designers). Nowadays, Agent Framework uses it as well for constructing
+		// the tool metadata presented to the LLM.
+		//
+		// Without [Description] attributes, the model still has method names, parameter names, and
+		// parameter types, so good naming may allow it to infer the intended semantics anyway. But
+		// the [Description] attributes make that contract more explicit and can express domain semantics
+		// that the type system alone cannot convey.
+
+		[Description("Gets a learner's profile, including target role, completed courses, and current skills.")]
+		public string GetLearnerProfile(
+			[Description("The learner ID.")] int learnerId)
+		{
+			var learnerContext = this._learningData.GetLearnerContext(learnerId);
+
+			// Return the profile based on the complete learner context.
+			var learnerProfileJson = JsonSerializer.Serialize(learnerContext);
+
+			return learnerProfileJson;
+		}
+
+		[Description("Gets the highest-ranked eligible course recommendations for a learner.")]
 		public string GetRecommendations(
-			[Description("The learner ID.")]
-			int learnerId)
+			[Description("The learner ID.")] int learnerId,
+			[Description("The maximum number of recommendations to return.")] int maxResults)
 		{
-			var learner = GetLearnerContext(learnerId);
-			var courses = GetCourseCatalog();
+			ArgumentOutOfRangeException.ThrowIfNegativeOrZero(maxResults);
 
-			var recommendations = this._recommendationService.GetRecommendations(learner, courses);
+			var learnerContext = this._learningData.GetLearnerContext(learnerId);
 
-			return JsonSerializer.Serialize(recommendations);
+			var courses = this._learningData.GetCourseCatalog();
+
+ 			var recommendations = this._recommendationService
+				.GetRecommendations(learnerContext, courses)
+				.Take(maxResults);
+
+			// Return only recommendation summary data here. Detailed course metadata is intentionally owned by the GetCourseDetails tool,
+			// keeping the tool contracts focused and allowing the agent to retrieve details only when needed.
+			var recommendationsJson =
+				JsonSerializer.Serialize(
+					recommendations.Select(
+						recommendation => new
+						{
+							recommendation.Course.CourseId,
+							recommendation.Course.Title,
+							recommendation.Score,
+							recommendation.Reasons
+						}));
+
+			return recommendationsJson;
 		}
 
-		private static LearnerContext GetLearnerContext(int learnerId)
+		[Description("Gets detailed information about a specific course, including its role, skills, active status, and prerequisites.")]
+		public string GetCourseDetails(
+			[Description("The course ID.")]
+			int courseId)
 		{
-			return new LearnerContext
-			{
-				LearnerId = learnerId,
-				TargetRole = "Azure Developer",
-				CompletedCourseIds = new HashSet<int>
-				{
-					100
-				},
-				Skills = new HashSet<string>
-				{
-					"C#",
-					"ASP.NET Core"
-				}
-			};
-		}
+			var course = this._learningData.GetCourse(courseId);
 
-		private static IReadOnlyList<Course> GetCourseCatalog()
-		{
-			return
-			[
-				new Course
-				{
-					CourseId = 100,
-					Title = "C# Fundamentals",
-					Role = "Azure Developer"
-				},
+			// Return the course details based on the complete course entity.
+			var courseDetailsJson = JsonSerializer.Serialize(course);
 
-				new Course
-				{
-					CourseId = 200,
-					Title = "Azure App Service",
-					Role = "Azure Developer",
-					PrerequisiteCourseIds = new HashSet<int>
-					{
-						100
-					},
-					Skills = new HashSet<string>
-					{
-						"Azure",
-						"App Service"
-					}
-				},
-
-				new Course
-				{
-					CourseId = 300,
-					Title = "Advanced AKS",
-					Role = "Azure Developer",
-					PrerequisiteCourseIds = new HashSet<int>
-					{
-						999
-					},
-					Skills = new HashSet<string>
-					{
-						"AKS",
-						"Kubernetes"
-					}
-				},
-
-				new Course
-				{
-					CourseId = 400,
-					Title = "Power BI Fundamentals",
-					Role = "Data Analyst",
-					Skills = new HashSet<string>
-					{
-						"Power BI",
-						"Data Visualization"
-					}
-				}
-			];
+			return courseDetailsJson;
 		}
 	}
 }

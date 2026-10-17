@@ -22,7 +22,9 @@ namespace LearningPlatform.Recommendations.Agent.Console
 
 			var recommendationService = new RecommendationService(eligibilityService, courseRanker);
 
-			var recommendationTools = new RecommendationTools(recommendationService);
+			var learningData = new DemoLearningData();
+
+			var recommendationTools = new RecommendationTools(recommendationService, learningData);
 
 			var agent =
 				new AIProjectClient(
@@ -30,25 +32,51 @@ namespace LearningPlatform.Recommendations.Agent.Console
 					new DefaultAzureCredential())
 				.AsAIAgent(
 					model: deploymentName,
-					name: "LearningRecommendationAgent",
+					name:
+						"LearningRecommendationAgent",
 					instructions:
 						"""
 						You are a learning recommendation assistant.
 
-						When asked what a learner should study next,
-						you must use the GetRecommendations tool.
+						Use the available tools whenever learner-specific
+						or course-specific facts are needed.
 
-						You may explain and summarize the returned recommendations,
-						but you must not recommend courses that are not returned
-						by the tool.
+						Never invent learner or course information.
+
+						All course recommendations must come from the
+						GetRecommendations tool.
+
+						Do not treat a course as recommended merely because
+						GetCourseDetails can retrieve information about it.
+
+						Use GetLearnerProfile when learner profile information
+						is needed.
+
+						Use GetCourseDetails when detailed information about
+						a course is needed.
 						""",
 					tools:
 					[
-						AIFunctionFactory.Create(recommendationTools.GetRecommendations)
+						AIFunctionFactory.Create(recommendationTools.GetLearnerProfile),
+						AIFunctionFactory.Create(recommendationTools.GetRecommendations),
+						AIFunctionFactory.Create(recommendationTools.GetCourseDetails)
 					]);
 
-			System.Console.WriteLine(
-				await agent.RunAsync("What should learner 1 study next, and why?"));
+			var response =
+				await agent.RunAsync(
+					"""
+					For learner 1, recommend the best two courses.
+
+					Also tell me:
+					- the learner's target role,
+					- the learner's existing skills,
+					- the exact prerequisite course IDs for each recommendation,
+					- and all skills developed by each recommended course.
+
+					Explain why the first recommendation ranks above the second.
+					""");
+
+			System.Console.WriteLine(response);
 		}
 	}
 }
