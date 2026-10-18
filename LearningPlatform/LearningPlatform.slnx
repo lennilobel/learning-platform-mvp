@@ -11,6 +11,8 @@
     <Project Path="LearningPlatform.DataLayer/LearningPlatform.DataLayer.csproj" />
   </Folder>
   <Folder Name="/Recommendations/">
+    <Project Path="LearningPlatform.Recommendations.Agent.ConsoleUI/LearningPlatform.Recommendations.Agent.ConsoleUI.csproj" />
+    <Project Path="LearningPlatform.Recommendations.Agent.Evaluation.ConsoleUI/LearningPlatform.Recommendations.Agent.Evaluation.ConsoleUI.csproj" Id="7842d573-954e-4ddf-a794-cf6e7133919d" />
     <Project Path="LearningPlatform.Recommendations.Agent/LearningPlatform.Recommendations.Agent.csproj" Id="13c50721-d310-4d81-9e43-37fb2f97225a" />
     <Project Path="LearningPlatform.Recommendations.Tests/LearningPlatform.Recommendations.Tests.csproj" Id="0eb84f21-cbab-49b5-9459-5dcebd9dd5d4" />
     <Project Path="LearningPlatform.Recommendations/LearningPlatform.Recommendations.csproj" Id="d7e442a1-9f5b-4c0e-8776-40180f6b7fc5" />
@@ -43,6 +45,5 @@
   </Project>
   <Project Path="LearningPlatform.EnrollmentApi/LearningPlatform.EnrollmentApi.csproj" />
   <Project Path="LearningPlatform.Infrastructure/LearningPlatform.Infrastructure.csproj" Id="0102fb18-de26-490c-812b-831741bccb39" />
-  <Project Path="LearningPlatform.Recommendations.Agent.ConsoleUI/LearningPlatform.Recommendations.Agent.ConsoleUI.csproj" />
   <Project Path="LearningPlatform.Shared/LearningPlatform.Shared.csproj" />
 </Solution>
