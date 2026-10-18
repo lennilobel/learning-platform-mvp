@@ -1,14 +1,19 @@
 ﻿using Azure.AI.Projects;
 using Azure.Identity;
+using Microsoft.Agents.AI;
 using Microsoft.Extensions.AI;
 using Microsoft.Extensions.Hosting;
+using OpenTelemetry;
+using OpenTelemetry.Trace;
 
-namespace LearningPlatform.Recommendations.Agent.Console
+namespace LearningPlatform.Recommendations.Agent.ConsoleUI
 {
 	internal class Program
 	{
 		static async Task Main(string[] args)
 		{
+			const string SourceName = "LearningPlatform.Recommendations.Agent";
+
 			var builder = Host.CreateApplicationBuilder(args);
 
 			var endpoint = builder.Configuration["Foundry:ProjectEndpoint"]
@@ -26,16 +31,16 @@ namespace LearningPlatform.Recommendations.Agent.Console
 
 			var recommendationTools = new RecommendationTools(recommendationService, learningData);
 
+			// Note: concrete class ChatClientAgent derives from abstract base class AIAgent.
+			// AIAgentBuilder can then compose an AIAgent pipeline around that underlying agent.
 			var agent =
-				new AIProjectClient(
+				new AIProjectClient(                        // Gives us an AIProjectClient.
 					new Uri(endpoint),
 					new DefaultAzureCredential())
-				.AsAIAgent(
+				.AsAIAgent(                                 // Gives us a concrete ChatClientAgent (which derives from the abstract AIAgent).
 					model: deploymentName,
-					name:
-						"LearningRecommendationAgent",
-					instructions:
-						"""
+					name: "LearningRecommendationAgent",
+					instructions: """
 						You are a learning recommendation assistant.
 
 						Use the available tools whenever learner-specific
@@ -60,7 +65,23 @@ namespace LearningPlatform.Recommendations.Agent.Console
 						AIFunctionFactory.Create(recommendationTools.GetLearnerProfile),
 						AIFunctionFactory.Create(recommendationTools.GetRecommendations),
 						AIFunctionFactory.Create(recommendationTools.GetCourseDetails)
-					]);
+					])
+				.AsBuilder()                                // Gives us an AIAgentBuilder so we can build the agent pipeline.
+				.UseOpenTelemetry(
+					sourceName: SourceName,
+					configure: options =>
+						options.EnableSensitiveData = true) // Useful for controlled development; generally avoid in production.
+				.Build();                                   // Gives us an AIAgent representing a composed agent pipeline
+															// that wraps the original ChatClientAgent and adds telemetry.
+
+			// Configure a tracer provider that listens for the agent's telemetry and exports completed activities to the console.
+			using var tracerProvider =
+				Sdk.CreateTracerProviderBuilder()
+					.AddSource(SourceName)
+					// If custom color-coding isn't needed, the standard console exporter could be used instead:
+					//.AddConsoleExporter()
+					.AddProcessor(new SimpleActivityExportProcessor(new ColoredConsoleActivityExporter(ConsoleColor.Cyan)))
+					.Build();
 
 			var response =
 				await agent.RunAsync(
@@ -76,7 +97,7 @@ namespace LearningPlatform.Recommendations.Agent.Console
 					Explain why the first recommendation ranks above the second.
 					""");
 
-			System.Console.WriteLine(response);
+			Console.WriteLine(response);
 		}
 	}
 }
