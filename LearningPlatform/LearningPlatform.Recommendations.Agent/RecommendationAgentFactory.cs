@@ -42,7 +42,10 @@ namespace LearningPlatform.Recommendations.Agent
 					[
 						AIFunctionFactory.Create(recommendationTools.GetLearnerProfile),
 						AIFunctionFactory.Create(recommendationTools.GetRecommendations),
-						AIFunctionFactory.Create(recommendationTools.GetCourseDetails)
+						AIFunctionFactory.Create(recommendationTools.GetCourseDetails),
+						new ApprovalRequiredAIFunction(
+							AIFunctionFactory.Create(recommendationTools.EnrollLearner)
+						)
 					])
 			;
 

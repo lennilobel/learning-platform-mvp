@@ -71,8 +71,7 @@ namespace LearningPlatform.Recommendations.Agent
 
 		[Description("Gets detailed information about a specific course, including its role, skills, active status, and prerequisites.")]
 		public string GetCourseDetails(
-			[Description("The course ID.")]
-			int courseId)
+			[Description("The course ID.")] int courseId)
 		{
 			var course = this._learningData.GetCourse(courseId);
 
@@ -81,5 +80,23 @@ namespace LearningPlatform.Recommendations.Agent
 
 			return courseDetailsJson;
 		}
+
+		private readonly HashSet<(int LearnerId, int CourseId)> _enrollments = [];
+
+		[Description("Enrolls a learner in a course.")]
+		public string EnrollLearner(
+			[Description("The learner ID.")] int learnerId,
+			[Description("The course ID.")] int courseId)
+		{
+			var enrollment = (LearnerId: learnerId, CourseId: courseId);
+
+			if (!this._enrollments.Add(enrollment))
+			{
+				return $"Learner {learnerId} is already enrolled in course {courseId}.";
+			}
+
+			return $"Learner {learnerId} was enrolled in course {courseId}.";
+		}
+
 	}
 }

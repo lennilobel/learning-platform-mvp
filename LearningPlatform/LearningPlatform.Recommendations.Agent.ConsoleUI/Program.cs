@@ -29,7 +29,7 @@ namespace LearningPlatform.Recommendations.Agent.ConsoleUI
 
 			var recommendationTools = new RecommendationTools(recommendationService, learningData);
 
-			// Give us an ChatClientAgent for our composed agent pipeline.
+			// Give us a ChatClientAgent for our composed agent pipeline.
 			var baseAgent = RecommendationAgentFactory.Create(endpoint, deploymentName, recommendationTools);
 
 			var agent =
@@ -51,20 +51,79 @@ namespace LearningPlatform.Recommendations.Agent.ConsoleUI
 					.AddProcessor(new SimpleActivityExportProcessor(new ColoredConsoleActivityExporter(ConsoleColor.Cyan)))
 					.Build();
 
-			var response =
-				await agent.RunAsync(
-					"""
-					For learner 1, recommend the best two courses.
+			//// This is a simple agent run without an explicitly managed session.
+			//var response =
+			//	await agent.RunAsync(
+			//		"""
+			//		For learner 1, recommend the best two courses.
 
-					Also tell me:
-					- the learner's target role,
-					- the learner's existing skills,
-					- the exact prerequisite course IDs for each recommendation,
-					- and all skills developed by each recommended course.
+			//		Also tell me:
+			//		- the learner's target role,
+			//		- the learner's existing skills,
+			//		- the exact prerequisite course IDs for each recommendation,
+			//		- and all skills developed by each recommended course.
 
-					Explain why the first recommendation ranks above the second.
-					""");
+			//		Explain why the first recommendation ranks above the second.
+			//		""");
 
+			//Console.WriteLine(response);
+
+			// Use a session so the approval response can continue the same agent interaction.
+			var session = await agent.CreateSessionAsync();
+
+			var response = await agent.RunAsync("For learner 1, recommend the best course and enroll the learner in it.", session);
+
+			// Retrieve whatever approvals may be required to continue the flow.
+			var approvalRequests = response.Messages
+				.SelectMany(message => message.Contents)
+				.OfType<ToolApprovalRequestContent>()
+				.ToList();
+
+			// Process any and all approval requests.
+			while (approvalRequests.Count > 0)
+			{
+				// Create a list to accumulate approval response messages.
+				var approvalResponses = new List<ChatMessage>();
+
+				// Iterate each approval request.
+				foreach (var approvalRequest in approvalRequests)
+				{
+					// Obtain the function call based on the request's tool call reference.
+					// Note: The hard cast is acceptable here because we deliberately wrapped a function tool (EnrollLearner) with approval.
+					// In a generic approval-processing infrastructure that could encounter other tool-call types, we'd pattern-match instead.
+					var functionCall = (FunctionCallContent)approvalRequest.ToolCall;
+
+					Console.WriteLine();
+					Console.WriteLine("APPROVAL REQUIRED");
+					Console.WriteLine($"Tool: {functionCall.Name}");
+
+					// Show the arguments for the function call.
+					if (functionCall.Arguments is not null)
+					{
+						foreach (var argument in functionCall.Arguments)
+						{
+							Console.WriteLine($"  {argument.Key}: {argument.Value}");
+						}
+					}
+
+					// Obtain approval from the humanoid.
+					Console.Write("Approve? (Y/N): ");
+					var approved = Console.ReadLine()?.Equals("Y", StringComparison.OrdinalIgnoreCase) == true;
+
+					approvalResponses.Add(new ChatMessage(ChatRole.User, [approvalRequest.CreateResponse(approved)]));
+				}
+
+				// Continue running the agent after obtaining the approval response(s).
+				response = await agent.RunAsync(approvalResponses, session);
+
+				// Retrieve any new approvals that may be required to continue the flow.
+				approvalRequests = response.Messages
+					.SelectMany(message => message.Contents)
+					.OfType<ToolApprovalRequestContent>()
+					.ToList();
+			}
+
+			Console.WriteLine();
 			Console.WriteLine(response);
 		}
 	}
