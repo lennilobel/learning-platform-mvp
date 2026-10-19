@@ -1,12 +1,8 @@
 # Learning Platform MVP
 
-This solution showcases my full-stack .NET 10 learning-platform MVP (Minimum Viable Product).
+This repository showcases my full-stack .NET 10 learning-platform MVP (Minimum Viable Product) solution.
 I built this solution to demonstrate modern application architecture,
-distributed systems, Azure cloud services, DevOps, security, and agentic AI.
-
-It demonstrates modern application architecture, distributed systems,
-cloud-native Azure hosting, secure identity, DevOps, deterministic recommendation logic,
-and agentic AI.
+distributed systems, Azure cloud services, CI/CD, security identity, deterministic recommendation logic, and agentic AI.
 
 The solution spans a React/TypeScript frontend, ASP.NET Core APIs,
 SQL Server/Azure SQL persistence, asynchronous event processing,
@@ -18,7 +14,6 @@ Key fundamentals demonstrated by the solution include:
 - Application Architecture
   - Layered API, business logic, data access, infrastructure, and shared-contract projects
   - Dependency injection with scoped and singleton service lifetimes
-  - Repository pattern
   - Application service orchestration
   - Async/await and cancellation-token propagation
   - Monolithic and decomposed/microservice hosting models
@@ -72,31 +67,27 @@ Key fundamentals demonstrated by the solution include:
   - Conversational recommendation agent
   - Tool/function calling
   - Tool metadata using descriptions
-  - Learner-profile retrieval tool
-  - Deterministic recommendation tool
-  - Course-details retrieval tool
   - Grounding agent responses in deterministic application data and logic
-  - Separation of deterministic recommendation logic from probabilistic agent orchestration
-  - Read-only stateless HTTP agent
+  - Distinct retrieval tools
   - Side-effecting enrollment tool
+  - Read-only stateless HTTP agent
   - Human-in-the-loop tool approval
   - Agent sessions for approval continuation
   - OpenTelemetry agent tracing
-  - Custom OpenTelemetry activity exporter
   - Deterministic offline agent evaluation
-  - Tool-call and tool-argument evaluation
-  - Keyword/output evaluation
-  - Custom evaluation checks
-  - Evaluation pass/fail gating
-  - Foundry semantic/LLM-as-judge evaluation scaffold
+    - Tool-call and tool-argument evaluation
+    - Keyword/output evaluation
+    - Custom evaluation checks
+    - Evaluation pass/fail gating
+    - Foundry semantic/LLM-as-judge evaluation scaffold
   - Online evaluation of live agent responses
-  - Live-response and recommendation-tool-usage checks
+    - Live-response and recommendation-tool-usage checks
 
 - Web API
   - ASP.NET Core Web API
-  - RESTful enrollment API
-  - Deterministic recommendation API
-  - Conversational recommendation-agent API
+    - RESTful enrollment API
+    - Deterministic recommendation API
+    - Conversational recommendation-agent API
   - Controller/application-service separation
   - Server-side validation
   - Duplicate-enrollment conflict handling
@@ -105,17 +96,13 @@ Key fundamentals demonstrated by the solution include:
   - SPA static-file hosting and fallback routing
 
 - React Frontend
-  - React
-  - TypeScript
-  - Vite
+  - React / TypeScript / Vite
   - React Router
   - MSAL React authentication
-  - Enrollment workflow
   - Client-side validation
   - Async loading and success states
   - Deterministic recommendation UI
   - Conversational recommendation-agent UI
-  - Markdown rendering of agent responses
   - Bearer-token acquisition and authenticated API calls
 
 - Identity and Security
@@ -141,30 +128,25 @@ Key fundamentals demonstrated by the solution include:
   - Separate API, outbox-worker, and learning-progress-worker images
   - Azure Container Registry
   - Azure Kubernetes Service
-  - Kubernetes Deployments and Services
-  - Kubernetes ServiceAccounts
+  - Kubernetes Deployments, Services, and Service Accounts
   - AKS OIDC issuer and Workload Identity
   - Azure Container Apps
   - Azure App Service
   - Azure Functions
-  - Function Flex Consumption hosting
   - Application Insights
-  - Log Analytics
 
 - Infrastructure as Code
-  - Azure Bicep
-  - Modular Bicep architecture
-  - AKS provisioning
-  - Azure Container Registry provisioning
-  - Service Bus provisioning
-  - Managed-identity provisioning
-  - Federated-credential provisioning
-  - RBAC role assignments
-  - App Service provisioning
-  - Azure Functions provisioning
-  - Azure Container Apps provisioning
-  - Log Analytics and Application Insights integration
-
+  - Azure Bicep for provisioning:
+    - AKS
+    - Azure Container Registry
+    - Service Bus
+    - Managed-identity
+    - Federated-credential
+    - RBAC role assignments
+    - App Service
+    - Azure Functions
+    - Azure Container Apps
+  
 - CI/CD
   - GitHub Actions
   - .NET build and test automation
@@ -189,8 +171,7 @@ Key fundamentals demonstrated by the solution include:
   - Runtime processing and duplicate-detection logging
 
 - Testing
-  - xUnit
-  - Moq
+  - xUnit / Moq
   - Business-service unit tests
   - Recommendation eligibility tests
   - Weighted-ranking tests
