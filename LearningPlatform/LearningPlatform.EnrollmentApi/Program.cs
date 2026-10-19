@@ -1,11 +1,14 @@
 using LearningPlatform.BusinessLogic.Enrollments;
 using LearningPlatform.BusinessLogic.LearningProgress;
 using LearningPlatform.BusinessLogic.Outbox;
+using LearningPlatform.BusinessLogic.Recommendations;
 using LearningPlatform.DataLayer;
 using LearningPlatform.DataLayer.Enrollment;
 using LearningPlatform.DataLayer.LearningProgress;
 using LearningPlatform.DataLayer.Outbox;
+using LearningPlatform.DataLayer.Recommendations;
 using LearningPlatform.Infrastructure;
+using LearningPlatform.Recommendations;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Identity.Web;
@@ -43,16 +46,23 @@ namespace LearningPlatform.EnrollmentApi
 			// Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
 			builder.Services.AddOpenApi();
 
-			// Configure the database context to use SQL Server with the connection string from appsettings.json
+			// Configure the database context to use SQL Server with the connection string from appsettings.json.
 			// Note that this uses scoped lifetime, because the DbContext is not thread-safe and should not be shared across requests.
 			builder.Services.AddDbContext<LearningPlatformDbContext>(options =>
 				options.UseSqlServer(
 					builder.Configuration.GetSection("ConnectionStrings")["LearningPlatform"]));
 
-			// Even though our services and repositories are stateless (and could therefore be registered as singletons), we can use
-			// scoped lifetime for them. This is because they depend on other services that are scoped; namely, the DbContext.
+			// Even though our services and repositories are stateless (and could therefore be registered as singletons), we use
+			// scoped lifetime for them when they depend on other services that are scoped; namely, the DbContext.
 			builder.Services.AddScoped<IEnrollmentRepository, EnrollmentRepository>();
 			builder.Services.AddScoped<IEnrollmentService, EnrollmentService>();
+			builder.Services.AddScoped<ILearningDataRepository, SqlLearningDataRepository>();
+			builder.Services.AddScoped<IRecommendationApplicationService, RecommendationApplicationService>();
+
+			// These can be singletons because (a) they are stateless and (b) they do not depend on other scoped services (e.g.; DbContext).
+			builder.Services.AddSingleton<ICourseRanker, WeightedCourseRanker>();
+			builder.Services.AddSingleton<IEligibilityService, EligibilityService>();
+			builder.Services.AddSingleton<IRecommendationService, RecommendationService>();
 
 			// In the single-process hosting model (i.e., monolithic architecture), the API also runs the background services that dispatch outbox messages and consume learning progress messages.
 			// In the decomposed hosting model (i.e., microservices architecture), those background services run in separate worker processes.

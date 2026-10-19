@@ -16,6 +16,7 @@
   <ItemGroup>
     <ProjectReference Include="..\LearningPlatform.BusinessLogic\LearningPlatform.BusinessLogic.csproj" />
     <ProjectReference Include="..\LearningPlatform.Infrastructure\LearningPlatform.Infrastructure.csproj" />
+    <ProjectReference Include="..\LearningPlatform.Recommendations\LearningPlatform.Recommendations.csproj" />
   </ItemGroup>
 
 </Project>

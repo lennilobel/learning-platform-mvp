@@ -218,6 +218,7 @@ kubectl logs deployment/learning-platform-api --follow
 
 : (and then, in a separate command window)
 kubectl port-forward service/learning-platform-api 8080:8080
+kubectl port-forward -n learning-platform service/learning-platform-api 8080:8080
 
 :Outbox
 kubectl apply -f outbox.yaml
