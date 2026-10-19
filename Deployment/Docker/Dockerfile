@@ -139,12 +139,13 @@ WORKDIR /src
 
 
 # Copy the .NET solution project files required for restoring NuGet packages.
-COPY LearningPlatform/LearningPlatform.BusinessLogic/LearningPlatform.BusinessLogic.csproj      ./LearningPlatform.BusinessLogic/
-COPY LearningPlatform/LearningPlatform.DataLayer/LearningPlatform.DataLayer.csproj              ./LearningPlatform.DataLayer/
-COPY LearningPlatform/LearningPlatform.EnrollmentApi/LearningPlatform.EnrollmentApi.csproj      ./LearningPlatform.EnrollmentApi/
-COPY LearningPlatform/LearningPlatform.Infrastructure/LearningPlatform.Infrastructure.csproj    ./LearningPlatform.Infrastructure/
-COPY LearningPlatform/LearningPlatform.Recommendations/LearningPlatform.Recommendations.csproj  ./LearningPlatform.Recommendations/
-COPY LearningPlatform/LearningPlatform.Shared/LearningPlatform.Shared.csproj                    ./LearningPlatform.Shared/
+COPY LearningPlatform/LearningPlatform.BusinessLogic/LearningPlatform.BusinessLogic.csproj                  ./LearningPlatform.BusinessLogic/
+COPY LearningPlatform/LearningPlatform.DataLayer/LearningPlatform.DataLayer.csproj                          ./LearningPlatform.DataLayer/
+COPY LearningPlatform/LearningPlatform.EnrollmentApi/LearningPlatform.EnrollmentApi.csproj                  ./LearningPlatform.EnrollmentApi/
+COPY LearningPlatform/LearningPlatform.Infrastructure/LearningPlatform.Infrastructure.csproj                ./LearningPlatform.Infrastructure/
+COPY LearningPlatform/LearningPlatform.Recommendations/LearningPlatform.Recommendations.csproj              ./LearningPlatform.Recommendations/
+COPY LearningPlatform/LearningPlatform.Recommendations.Agent/LearningPlatform.Recommendations.Agent.csproj  ./LearningPlatform.Recommendations.Agent/
+COPY LearningPlatform/LearningPlatform.Shared/LearningPlatform.Shared.csproj                                ./LearningPlatform.Shared/
 
 # Restore NuGet packages for the API project graph.
 # Download and install any dependencies specified in LearningPlatform.EnrollmentApi.csproj (and all referenced projects), into the local NuGet package cache.
@@ -152,12 +153,13 @@ COPY LearningPlatform/LearningPlatform.Shared/LearningPlatform.Shared.csproj    
 RUN dotnet restore LearningPlatform.EnrollmentApi/LearningPlatform.EnrollmentApi.csproj
 
 # Now copy the complete .NET application source code required by the API.
-COPY LearningPlatform/LearningPlatform.BusinessLogic/   ./LearningPlatform.BusinessLogic/
-COPY LearningPlatform/LearningPlatform.DataLayer/       ./LearningPlatform.DataLayer/
-COPY LearningPlatform/LearningPlatform.EnrollmentApi/   ./LearningPlatform.EnrollmentApi/
-COPY LearningPlatform/LearningPlatform.Infrastructure/  ./LearningPlatform.Infrastructure/
-COPY LearningPlatform/LearningPlatform.Recommendations/ ./LearningPlatform.Recommendations/
-COPY LearningPlatform/LearningPlatform.Shared/          ./LearningPlatform.Shared/
+COPY LearningPlatform/LearningPlatform.BusinessLogic/           ./LearningPlatform.BusinessLogic/
+COPY LearningPlatform/LearningPlatform.DataLayer/               ./LearningPlatform.DataLayer/
+COPY LearningPlatform/LearningPlatform.EnrollmentApi/           ./LearningPlatform.EnrollmentApi/
+COPY LearningPlatform/LearningPlatform.Infrastructure/          ./LearningPlatform.Infrastructure/
+COPY LearningPlatform/LearningPlatform.Recommendations/         ./LearningPlatform.Recommendations/
+COPY LearningPlatform/LearningPlatform.Recommendations.Agent/   ./LearningPlatform.Recommendations.Agent/
+COPY LearningPlatform/LearningPlatform.Shared/                  ./LearningPlatform.Shared/
 
 # Copy the freshly built React application (from the ui-build stage) into the API project
 COPY --from=ui-build /src/LearningPlatform.EnrollmentApi/wwwroot ./LearningPlatform.EnrollmentApi/wwwroot

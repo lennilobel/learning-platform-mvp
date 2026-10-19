@@ -1,3 +1,6 @@
+:Creates a Federated Identity Credential (FIC) that allows your GitHub Actions workflow to authenticate to Azure using
+:a User-Assigned Managed Identity (UAMI), without storing a password, client secret, or certificate in GitHub
+
 az identity federated-credential create ^
   --resource-group demos-rg ^
   --identity-name uami-learningplatform-github-actions ^
@@ -5,3 +8,34 @@ az identity federated-credential create ^
   --issuer "https://token.actions.githubusercontent.com" ^
   --subject "repo:lennilobel@40524895/learning-platform-mvp@1422648928:ref:refs/heads/main" ^
   --audiences "api://AzureADTokenExchange"
+
+Parameter												Explanation
+az identity federated-credential create					Creates a federated identity credential associated with an existing user-assigned managed identity.
+--resource-group demos-rg								The Azure resource group containing the managed identity.
+--identity-name uami-learningplatform-github-actions	The existing managed identity that your GitHub Actions workflow will authenticate as.
+--name fic-github-main-mvp								The name of this particular federated credential. A managed identity can have multiple FICs.
+--issuer "https://token.actions.githubusercontent.com"	Identifies GitHub Actions as the trusted OpenID Connect (OIDC) token issuer.
+--subject "repo:..."									Specifies exactly which GitHub repository and branch can use this trust relationship.
+--audiences "api://AzureADTokenExchange"				Specifies that the GitHub-issued token is intended for exchange with Microsoft Entra ID.
+
+Understanding the subject
+	repo:lennilobel@40524895/learning-platform-mvp@1422648928:ref:refs/heads/main
+
+
+lennilobel/learning-platform-mvp	GitHub owner and repository
+40524895 / 1422648928				Immutable owner ID and repository ID, respectively
+refs/heads/main						Only the main branch
+
+The numeric IDs are especially important.
+
+	Historically, GitHub used subjects such as:
+
+		repo:lennilobel/learning-platform-mvp:ref:refs/heads/main
+
+	However, repository names and ownership can change. The newer format includes immutable IDs, preventing a different repository from
+	inheriting the same trusted identity simply by reusing a name.
+
+Important: This credential must match the actual sub claim GitHub issues.
+The immutable format must be active for the repository; Azure doesn't automatically translate between the old and new formats.
+
+:...and place the CI/CD YAML file in .github/workflows

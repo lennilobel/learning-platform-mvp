@@ -1,0 +1,267 @@
+# Friendly name shown for this workflow in the GitHub Actions UI.
+name: Learning Platform CI/CD
+
+# Defines when this workflow should run.
+on:
+
+  # Run whenever commits are pushed directly to the main branch.
+  push:
+    branches:
+      - main
+
+  # Also run when a pull request targets the main branch.
+  # This lets CI validate proposed changes before they are merged.
+  pull_request:
+    branches:
+      - main
+
+# A workflow contains one or more jobs.
+jobs:
+
+  # Our first job is named "build-and-test".
+  # This name is arbitrary, but should describe the job's responsibility.
+  build-and-test:
+
+    # GitHub provisions a temporary Linux virtual machine called a runner.
+    # All steps in this job execute sequentially on this same runner.
+    runs-on: ubuntu-latest
+
+    # A job contains an ordered sequence of steps.
+    # If a step fails, later steps normally do not run.
+    steps:
+
+      # Download the repository contents onto the runner.
+      #
+      # "uses" means this step invokes a reusable GitHub Action rather than directly executing a command.
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      # Install the requested .NET SDK onto the runner.
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+
+      # Build each of the .NET workloads that we actually deploy.
+      - name: Build .NET workloads
+        run: |
+          dotnet build LearningPlatform/LearningPlatform.EnrollmentApi/LearningPlatform.EnrollmentApi.csproj --configuration Release
+          dotnet build LearningPlatform/LearningPlatform.OutboxWorker/LearningPlatform.OutboxWorker.csproj --configuration Release
+          dotnet build LearningPlatform/LearningPlatform.LearningProgressWorker/LearningPlatform.LearningProgressWorker.csproj --configuration Release
+
+      # Build and execute the xUnit test project.
+      #
+      # dotnet test implicitly restores packages and builds the project before running the tests.
+      # If any test fails, dotnet test returns a non-zero exit code, causing this GitHub Actions job to fail.
+      - name: Run .NET unit tests
+        run: >
+          dotnet test
+          LearningPlatform/LearningPlatform.BusinessLogic.Tests/LearningPlatform.BusinessLogic.Tests.csproj
+          --configuration Release
+
+      # Install Node.js onto the runner so we can build the React application.
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+
+          # Use Node.js 22 (match the Dockerfile).
+          node-version: '22'
+
+          # Cache downloaded npm packages between workflow runs to speed up CI.
+          cache: npm
+
+          # The package-lock.json file used to calculate the npm cache key.
+          cache-dependency-path: LearningPlatform/learning-platform-ui/package-lock.json
+
+      # Install the exact dependency versions recorded in package-lock.json.
+      #
+      # npm ci is preferred over npm install in CI because it performs a clean, deterministic installation.
+      - name: Install React dependencies
+        working-directory: LearningPlatform/learning-platform-ui
+        run: npm ci
+
+      # Perform the React/TypeScript production build.
+      #
+      # If TypeScript compilation or the Vite build fails, this step fails and therefore the entire CI job fails.
+      - name: Build React application
+        working-directory: LearningPlatform/learning-platform-ui
+        run: npm run build
+
+  # Build and publish the three deployable Docker images to Azure Container Registry.
+  #
+  # This job runs only after build-and-test succeeds, and only for pushes to main.
+  # Pull requests run CI, but do not publish deployable images.
+  build-and-push-images:
+
+    # Do not start this job unless the CI job completed successfully.
+    needs: build-and-test
+
+    # Only publish images for an actual push to the main branch.
+    # A pull request should validate the code, but should not publish anything.
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+
+    runs-on: ubuntu-latest
+
+    # Make the image tag available to jobs that depend on this job.
+    outputs:
+      image_tag: ${{ steps.image_tag.outputs.image_tag }}
+
+    # Allow this job to request a GitHub OIDC token for Azure authentication.
+    # contents: read is required so the job can check out the repository.
+    permissions:
+      id-token: write
+      contents: read
+
+    # Values reused by several steps in this job.
+    env:
+      ACR_NAME: sleeklearningplatformacr
+      ACR_LOGIN_SERVER: sleeklearningplatformacr-deh8ashubsbdbtax.azurecr.io
+
+    steps:
+
+      # This is a new job running on a new runner, so we must check out
+      # the repository again. Jobs do not share a filesystem.
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      # Create a human-friendly but traceable image tag.
+      #
+      # Example:
+      #   build-8-1-f53dc68
+      #
+      # The value is written to:
+      #   GITHUB_ENV    - makes IMAGE_TAG available to later steps in this job.
+      #   GITHUB_OUTPUT - makes the tag available as a job output to dependent jobs.
+      - name: Set image tag
+        id: image_tag
+        run: |
+          IMAGE_TAG="build-${{ github.run_number }}-${{ github.run_attempt }}-${GITHUB_SHA::7}"
+          echo "IMAGE_TAG=$IMAGE_TAG" >> "$GITHUB_ENV"
+          echo "image_tag=$IMAGE_TAG" >> "$GITHUB_OUTPUT"
+
+      # Authenticate to Azure using GitHub OIDC federation.
+      # No Azure client secret is stored in GitHub.
+      - name: Login to Azure
+        uses: azure/login@v2
+        with:
+          client-id: ${{ vars.AZURE_CLIENT_ID }}
+          tenant-id: ${{ vars.AZURE_TENANT_ID }}
+          subscription-id: ${{ vars.AZURE_SUBSCRIPTION_ID }}
+
+      # Authenticate Docker to our Azure Container Registry using the Azure identity established by the previous step.
+      - name: Login to Azure Container Registry
+        run: az acr login --name $ACR_NAME
+
+      # Build the decomposed API image.
+      #
+      # The main Dockerfile contains multiple final targets, so explicitly select the api-only target rather than the monolithic target.
+      - name: Build API image
+        run: >
+          docker build
+          -f Deployment/Docker/Dockerfile
+          --target api-only
+          -t $ACR_LOGIN_SERVER/learning-platform-api-only:$IMAGE_TAG
+          .
+
+      # Build the dedicated Outbox Worker image.
+      - name: Build Outbox Worker image
+        run: >
+          docker build
+          -f Deployment/Docker/Dockerfile.OutboxWorker
+          -t $ACR_LOGIN_SERVER/learning-platform-outbox-worker:$IMAGE_TAG
+          .
+
+      # Build the dedicated Learning Progress Worker image.
+      - name: Build Learning Progress Worker image
+        run: >
+          docker build
+          -f Deployment/Docker/Dockerfile.LearningProgressWorker
+          -t $ACR_LOGIN_SERVER/learning-platform-learning-progress-worker:$IMAGE_TAG
+          .
+
+      # Push all three newly built images to ACR.
+      - name: Push images to ACR
+        run: |
+          docker push $ACR_LOGIN_SERVER/learning-platform-api-only:$IMAGE_TAG
+          docker push $ACR_LOGIN_SERVER/learning-platform-outbox-worker:$IMAGE_TAG
+          docker push $ACR_LOGIN_SERVER/learning-platform-learning-progress-worker:$IMAGE_TAG
+
+  # Deploy the newly published images to the running AKS cluster.
+  #
+  # This job runs only after all three Docker images have been successfully
+  # built and pushed to ACR.
+  deploy-to-aks:
+
+    # Wait for image publishing to succeed.
+    needs: build-and-push-images
+
+    # Only deploy from an actual push to main.
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+
+    runs-on: ubuntu-latest
+
+    # This job independently authenticates to Azure using OIDC.
+    # Jobs run on separate runners and do not inherit authentication state.
+    permissions:
+      id-token: write
+      contents: read
+
+    env:
+      RESOURCE_GROUP: demos-rg
+      AKS_CLUSTER: aks-learningplatform
+      K8S_NAMESPACE: learning-platform
+      ACR_LOGIN_SERVER: sleeklearningplatformacr-deh8ashubsbdbtax.azurecr.io
+
+      # Receive the exact image tag produced by the previous job.
+      IMAGE_TAG: ${{ needs.build-and-push-images.outputs.image_tag }}
+
+    steps:
+
+      # Authenticate this new runner to Azure using GitHub OIDC federation.
+      - name: Login to Azure
+        uses: azure/login@v2
+        with:
+          client-id: ${{ vars.AZURE_CLIENT_ID }}
+          tenant-id: ${{ vars.AZURE_TENANT_ID }}
+          subscription-id: ${{ vars.AZURE_SUBSCRIPTION_ID }}
+
+      # Install kubectl on the GitHub-hosted runner.
+      - name: Setup kubectl
+        uses: azure/setup-kubectl@v4
+
+      # Retrieve the AKS kubeconfig and make aks-learningplatform
+      # the current Kubernetes context for kubectl.
+      - name: Set AKS context
+        uses: azure/aks-set-context@v5
+        with:
+          resource-group: ${{ env.RESOURCE_GROUP }}
+          cluster-name: ${{ env.AKS_CLUSTER }}
+
+      # Update each Kubernetes Deployment to use the images produced
+      # by this specific GitHub Actions run.
+      #
+      # kubectl set image changes only the container image in the existing
+      # Deployment. Environment variables, ServiceAccounts, Workload Identity,
+      # replica counts, and the rest of the Deployment configuration remain intact.
+      - name: Deploy images to AKS
+        run: |
+          kubectl set image deployment/learning-platform-api \
+            learning-platform-api=$ACR_LOGIN_SERVER/learning-platform-api-only:$IMAGE_TAG \
+            --namespace $K8S_NAMESPACE
+
+          kubectl set image deployment/learning-platform-outbox \
+            learning-platform-outbox=$ACR_LOGIN_SERVER/learning-platform-outbox-worker:$IMAGE_TAG \
+            --namespace $K8S_NAMESPACE
+
+          kubectl set image deployment/learning-platform-progress \
+            learning-platform-progress=$ACR_LOGIN_SERVER/learning-platform-learning-progress-worker:$IMAGE_TAG \
+            --namespace $K8S_NAMESPACE
+
+      # Wait for Kubernetes to finish replacing the old pods with pods
+      # running the newly deployed images. A failed rollout fails the CD job.
+      - name: Verify AKS rollouts
+        run: |
+          kubectl rollout status deployment/learning-platform-api --namespace $K8S_NAMESPACE --timeout=180s
+          kubectl rollout status deployment/learning-platform-outbox --namespace $K8S_NAMESPACE --timeout=180s
+          kubectl rollout status deployment/learning-platform-progress --namespace $K8S_NAMESPACE --timeout=180s
+

@@ -3,6 +3,7 @@ import { Link, Route, Routes } from 'react-router'
 import './App.css'
 import EnrollmentPage from './EnrollmentPage'
 import Home from './HomePage'
+import RecommendationAgentPage from './RecommendationAgentPage'
 import RecommendationsPage from './RecommendationsPage'
 
 function App(): React.JSX.Element {
@@ -13,7 +14,8 @@ function App(): React.JSX.Element {
             <nav>
                 <Link className='nav-link' to="/">Home</Link>
                 <Link className='nav-link' to="/enrollment">Enrollment</Link>
-                <Link className='nav-link' to="/recommendations">Recommendations</Link>
+                <Link className='nav-link' to="/recommendations">Recommendations (deterministic)</Link>
+                <Link className='nav-link' to="/recommendation-agent">Recommendations (conversational)</Link>
                 <span className='signed-in'>
                     Signed in as {account?.name ?? account?.username}&nbsp;
                 </span>
@@ -31,6 +33,7 @@ function App(): React.JSX.Element {
                 <Route path="/" element={<Home />} />
                 <Route path="/enrollment" element={<EnrollmentPage />} />
                 <Route path="/recommendations" element={<RecommendationsPage />} />
+                <Route path="/recommendation-agent" element={<RecommendationAgentPage />} />
             </Routes>
         </>
     )

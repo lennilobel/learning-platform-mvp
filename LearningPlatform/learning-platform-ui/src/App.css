@@ -24,3 +24,23 @@ nav {
 .signed-in {
     margin-left: auto;
 }
+
+.agent-response p {
+    margin-top: 0;
+    margin-bottom: 8px;
+}
+
+.agent-response ol,
+.agent-response ul {
+    margin-top: 8px;
+    margin-bottom: 8px;
+}
+
+.agent-response li {
+    margin-top: 0;
+    margin-bottom: 4px;
+}
+
+.agent-response li p {
+    margin: 0;
+}

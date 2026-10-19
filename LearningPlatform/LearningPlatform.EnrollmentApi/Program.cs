@@ -9,6 +9,8 @@ using LearningPlatform.DataLayer.Outbox;
 using LearningPlatform.DataLayer.Recommendations;
 using LearningPlatform.Infrastructure;
 using LearningPlatform.Recommendations;
+using LearningPlatform.Recommendations.Agent;
+using LearningPlatform.Recommendations.Agent.LearningPlatform.Recommendations.Agent;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Identity.Web;
@@ -21,6 +23,14 @@ namespace LearningPlatform.EnrollmentApi
 		{
 			var builder = WebApplication.CreateBuilder(args);
 
+			// Get application configuration.
+
+			var foundryEndpoint = builder.Configuration["Foundry:ProjectEndpoint"]
+				?? throw new InvalidOperationException("Foundry:ProjectEndpoint is not configured.");
+
+			var foundryModel = builder.Configuration["Foundry:Model"]
+				?? throw new InvalidOperationException("Foundry:Model is not configured.");         
+			
 			// Add services to the container.
 
 			builder.Services.AddControllers();
@@ -58,6 +68,8 @@ namespace LearningPlatform.EnrollmentApi
 			builder.Services.AddScoped<IEnrollmentService, EnrollmentService>();
 			builder.Services.AddScoped<ILearningDataRepository, SqlLearningDataRepository>();
 			builder.Services.AddScoped<IRecommendationApplicationService, RecommendationApplicationService>();
+			builder.Services.AddScoped<IRecommendationAgentService>(sp => new RecommendationAgentService(foundryEndpoint, foundryModel, sp.GetRequiredService<RecommendationTools>())); 
+			builder.Services.AddScoped<RecommendationTools>();
 
 			// These can be singletons because (a) they are stateless and (b) they do not depend on other scoped services (e.g.; DbContext).
 			builder.Services.AddSingleton<ICourseRanker, WeightedCourseRanker>();
