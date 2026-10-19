@@ -1,0 +1,7 @@
+az identity federated-credential create ^
+  --resource-group demos-rg ^
+  --identity-name uami-learningplatform-github-actions ^
+  --name fic-github-main-mvp ^
+  --issuer "https://token.actions.githubusercontent.com" ^
+  --subject "repo:lennilobel@40524895/learning-platform-mvp@1422648928:ref:refs/heads/main" ^
+  --audiences "api://AzureADTokenExchange"

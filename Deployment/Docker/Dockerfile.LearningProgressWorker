@@ -19,21 +19,23 @@ FROM mcr.microsoft.com/dotnet/sdk:10.0 AS build
 WORKDIR /src
 
 # Copy project files first so that NuGet restore can be cached independently from changes to the source code.
-COPY LearningPlatform/LearningPlatform.BusinessLogic/LearningPlatform.BusinessLogic.csproj ./LearningPlatform.BusinessLogic/
-COPY LearningPlatform/LearningPlatform.DataLayer/LearningPlatform.DataLayer.csproj ./LearningPlatform.DataLayer/
-COPY LearningPlatform/LearningPlatform.Infrastructure/LearningPlatform.Infrastructure.csproj ./LearningPlatform.Infrastructure/
-COPY LearningPlatform/LearningPlatform.Shared/LearningPlatform.Shared.csproj ./LearningPlatform.Shared/
-COPY LearningPlatform/LearningPlatform.LearningProgressWorker/LearningPlatform.LearningProgressWorker.csproj ./LearningPlatform.LearningProgressWorker/
+COPY LearningPlatform/LearningPlatform.BusinessLogic/LearningPlatform.BusinessLogic.csproj                      ./LearningPlatform.BusinessLogic/
+COPY LearningPlatform/LearningPlatform.DataLayer/LearningPlatform.DataLayer.csproj                              ./LearningPlatform.DataLayer/
+COPY LearningPlatform/LearningPlatform.Infrastructure/LearningPlatform.Infrastructure.csproj                    ./LearningPlatform.Infrastructure/
+COPY LearningPlatform/LearningPlatform.Recommendations/LearningPlatform.Recommendations.csproj                  ./LearningPlatform.Recommendations/
+COPY LearningPlatform/LearningPlatform.Shared/LearningPlatform.Shared.csproj                                    ./LearningPlatform.Shared/
+COPY LearningPlatform/LearningPlatform.LearningProgressWorker/LearningPlatform.LearningProgressWorker.csproj    ./LearningPlatform.LearningProgressWorker/
 
 # Restore the Learning Progress Worker and all of its referenced projects.
 RUN dotnet restore LearningPlatform.LearningProgressWorker/LearningPlatform.LearningProgressWorker.csproj
 
 # Copy the source code for the worker and all projects in its dependency graph.
-COPY LearningPlatform/LearningPlatform.BusinessLogic/ ./LearningPlatform.BusinessLogic/
-COPY LearningPlatform/LearningPlatform.DataLayer/ ./LearningPlatform.DataLayer/
-COPY LearningPlatform/LearningPlatform.Infrastructure/ ./LearningPlatform.Infrastructure/
-COPY LearningPlatform/LearningPlatform.Shared/ ./LearningPlatform.Shared/
-COPY LearningPlatform/LearningPlatform.LearningProgressWorker/ ./LearningPlatform.LearningProgressWorker/
+COPY LearningPlatform/LearningPlatform.BusinessLogic/           ./LearningPlatform.BusinessLogic/
+COPY LearningPlatform/LearningPlatform.DataLayer/               ./LearningPlatform.DataLayer/
+COPY LearningPlatform/LearningPlatform.Infrastructure/          ./LearningPlatform.Infrastructure/
+COPY LearningPlatform/LearningPlatform.Recommendations/         ./LearningPlatform.Recommendations/
+COPY LearningPlatform/LearningPlatform.Shared/                  ./LearningPlatform.Shared/
+COPY LearningPlatform/LearningPlatform.LearningProgressWorker/  ./LearningPlatform.LearningProgressWorker/
 
 # Publish the dedicated Learning Progress Worker executable.
 RUN dotnet publish \

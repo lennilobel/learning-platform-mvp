@@ -143,6 +143,7 @@ COPY LearningPlatform/LearningPlatform.BusinessLogic/LearningPlatform.BusinessLo
 COPY LearningPlatform/LearningPlatform.DataLayer/LearningPlatform.DataLayer.csproj              ./LearningPlatform.DataLayer/
 COPY LearningPlatform/LearningPlatform.EnrollmentApi/LearningPlatform.EnrollmentApi.csproj      ./LearningPlatform.EnrollmentApi/
 COPY LearningPlatform/LearningPlatform.Infrastructure/LearningPlatform.Infrastructure.csproj    ./LearningPlatform.Infrastructure/
+COPY LearningPlatform/LearningPlatform.Recommendations/LearningPlatform.Recommendations.csproj  ./LearningPlatform.Recommendations/
 COPY LearningPlatform/LearningPlatform.Shared/LearningPlatform.Shared.csproj                    ./LearningPlatform.Shared/
 
 # Restore NuGet packages for the API project graph.
@@ -155,6 +156,7 @@ COPY LearningPlatform/LearningPlatform.BusinessLogic/   ./LearningPlatform.Busin
 COPY LearningPlatform/LearningPlatform.DataLayer/       ./LearningPlatform.DataLayer/
 COPY LearningPlatform/LearningPlatform.EnrollmentApi/   ./LearningPlatform.EnrollmentApi/
 COPY LearningPlatform/LearningPlatform.Infrastructure/  ./LearningPlatform.Infrastructure/
+COPY LearningPlatform/LearningPlatform.Recommendations/ ./LearningPlatform.Recommendations/
 COPY LearningPlatform/LearningPlatform.Shared/          ./LearningPlatform.Shared/
 
 # Copy the freshly built React application (from the ui-build stage) into the API project
