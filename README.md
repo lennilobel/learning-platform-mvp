@@ -1,6 +1,6 @@
 # Learning Platform MVP
 
-This solution showcases my full-stack .NET 10 learning-platform MVP.
+This solution showcases my full-stack .NET 10 learning-platform MVP (Minimum Viable Product).
 I built this solution to demonstrate modern application architecture,
 distributed systems, Azure cloud services, DevOps, security, and agentic AI.
 
