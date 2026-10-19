@@ -68,7 +68,7 @@ namespace LearningPlatform.EnrollmentApi
 			builder.Services.AddScoped<IEnrollmentService, EnrollmentService>();
 			builder.Services.AddScoped<ILearningDataRepository, SqlLearningDataRepository>();
 			builder.Services.AddScoped<IRecommendationApplicationService, RecommendationApplicationService>();
-			builder.Services.AddScoped<IRecommendationAgentService>(sp => new RecommendationAgentService(foundryEndpoint, foundryModel, sp.GetRequiredService<RecommendationTools>())); 
+			builder.Services.AddScoped<IRecommendationAgentService>(serviceProvider => CreateRecommendationAgentService(serviceProvider, foundryEndpoint, foundryModel)); 
 			builder.Services.AddScoped<RecommendationTools>();
 
 			// These can be singletons because (a) they are stateless and (b) they do not depend on other scoped services (e.g.; DbContext).
@@ -115,5 +115,18 @@ namespace LearningPlatform.EnrollmentApi
 
 			app.Run();
 		}
+
+		private static IRecommendationAgentService CreateRecommendationAgentService(
+			IServiceProvider serviceProvider,
+			string foundryEndpoint,
+			string foundryModel)
+		{
+			return new RecommendationAgentService(
+				foundryEndpoint,
+				foundryModel,
+				serviceProvider.GetRequiredService<RecommendationTools>(),
+				serviceProvider.GetRequiredService<ILogger<RecommendationAgentService>>());
+		}
+
 	}
 }

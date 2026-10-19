@@ -192,7 +192,7 @@ namespace LearningPlatform.Recommendations.Agent.Evaluation.ConsoleUI
 			// EvaluateAsync actually runs the agent against the query, captures the conversation/tool calls, and then feeds the
 			// resulting EvalItem to the local evaluator.
 			var results = await agent.EvaluateAsync(
-				[query],
+				queries: [query],
 				evaluator,
 				evalName: "Recommendation Agent - Local Evaluation"
 			//, expectedToolCalls: expectedToolCalls

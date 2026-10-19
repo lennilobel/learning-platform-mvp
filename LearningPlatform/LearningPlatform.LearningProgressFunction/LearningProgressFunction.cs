@@ -38,7 +38,7 @@ namespace LearningPlatform.LearningProgressFunction
 			var enrollmentCreatedEvent = JsonSerializer.Deserialize<EnrollmentCreatedEvent>(message.Body.ToString(), _jsonSerializerOptions)
 				?? throw new InvalidOperationException("Learning progress function is unable to deserialize EnrollmentCreatedEvent.");
 
-			this._logger.LogWarning("Learning progress function processing EnrollmentCreatedEvent SB message. EventId={EventId}, LearnerId={LearnerId}, CourseId={CourseId}",
+			this._logger.LogInformation("Learning progress function processing EnrollmentCreatedEvent SB message. EventId={EventId}, LearnerId={LearnerId}, CourseId={CourseId}",
 				enrollmentCreatedEvent.EventId,
 				enrollmentCreatedEvent.LearnerId,
 				enrollmentCreatedEvent.CourseId);
@@ -46,7 +46,7 @@ namespace LearningPlatform.LearningProgressFunction
 			// Invoke the idempotent business operation; the business/data layers ensure that a redelivered Service Bus message does not repeat the business effect.
 			var isDuplicate = await this._learningProgressService.ProcessEnrollmentCreated(enrollmentCreatedEvent, cancellationToken);
 
-			this._logger.LogWarning("Processed EnrollmentCreated message. MessageId={MessageId}, DeliveryCount={DeliveryCount}, IsDuplicate={IsDuplicate}",
+			this._logger.LogInformation("Processed EnrollmentCreated message. MessageId={MessageId}, DeliveryCount={DeliveryCount}, IsDuplicate={IsDuplicate}",
 				message.MessageId,
 				message.DeliveryCount,
 				isDuplicate);
@@ -61,7 +61,7 @@ namespace LearningPlatform.LearningProgressFunction
 			// Complete the delivered message after processing (without this, the delivered message will be redelivered after the lock expires, or if/when the processor abandons/releases the message).
 			await messageActions.CompleteMessageAsync(message, cancellationToken);
 
-			this._logger.LogWarning("Learning progress function completed EnrollmentCreatedEvent SB message.");
+			this._logger.LogInformation("Learning progress function completed EnrollmentCreatedEvent SB message.");
 		}
 	}
 }

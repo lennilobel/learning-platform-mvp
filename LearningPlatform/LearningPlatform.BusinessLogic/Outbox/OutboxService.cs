@@ -28,16 +28,16 @@ namespace LearningPlatform.BusinessLogic.Outbox
 		{
 			var messages = await this._outboxRepository.GetUnpublishedOutboxMessages(batchSize: 10, cancellationToken);
 
-			this._logger.LogWarning("Outbox service found {MessageCount} unpublished outbox messages.", messages.Count);
+			this._logger.LogInformation("Outbox service found {MessageCount} unpublished outbox messages.", messages.Count);
 
 			foreach (var message in messages)
 			{
 				try
 				{
-					this._logger.LogWarning("Dispatching outbox message with ID {OutboxMessageId} and type {MessageType}.", message.OutboxMessageId, message.MessageType);
+					this._logger.LogInformation("Dispatching outbox message with ID {OutboxMessageId} and type {MessageType}.", message.OutboxMessageId, message.MessageType);
 					await this._outboxMessagePublisher.Publish(message, cancellationToken);
 
-					this._logger.LogWarning("Marking outbox message with ID {OutboxMessageId} as published.", message.OutboxMessageId);
+					this._logger.LogInformation("Marking outbox message with ID {OutboxMessageId} as published.", message.OutboxMessageId);
 					await this._outboxRepository.MarkOutboxMessagePublished(message.OutboxMessageId, DateTimeOffset.UtcNow, cancellationToken);
 				}
 				catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)

@@ -24,7 +24,7 @@ namespace LearningPlatform.BusinessLogic.Enrollments
 
 		public async Task<CreateEnrollmentResult> CreateEnrollment(Enrollment enrollment, CancellationToken cancellationToken)
 		{
-			this._logger.LogWarning("EnrollmentService creating enrollment. LearnerId={LearnerId}, CourseId={CourseId}",
+			this._logger.LogInformation("EnrollmentService creating enrollment. LearnerId={LearnerId}, CourseId={CourseId}",
 				enrollment.LearnerId,
 				enrollment.CourseId);
 
@@ -53,7 +53,7 @@ namespace LearningPlatform.BusinessLogic.Enrollments
 
 			var isDuplicate = await this._enrollmentRepository.CreateEnrollment(enrollmentCreatedEvent, cancellationToken);
 
-			this._logger.LogWarning("EnrollmentService created enrollment. LearnerId={LearnerId}, CourseId={CourseId}, IsDuplicate={IsDuplicate}",
+			this._logger.LogInformation("EnrollmentService created enrollment. LearnerId={LearnerId}, CourseId={CourseId}, IsDuplicate={IsDuplicate}",
 				enrollment.LearnerId,
 				enrollment.CourseId,
 				isDuplicate);

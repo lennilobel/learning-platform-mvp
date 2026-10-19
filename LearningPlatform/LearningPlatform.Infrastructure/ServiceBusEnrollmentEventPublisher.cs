@@ -27,7 +27,7 @@ namespace LearningPlatform.Infrastructure
 
 			await this._sender.SendMessageAsync(message, cancellationToken);
 
-			this._logger.LogWarning("Sent EnrollmentCreatedEvent SB message. OutboxMessageId={OutboxMessageId}", outboxMessage.OutboxMessageId);
+			this._logger.LogInformation("Sent EnrollmentCreatedEvent SB message. OutboxMessageId={OutboxMessageId}", outboxMessage.OutboxMessageId);
 		}
 
 	}

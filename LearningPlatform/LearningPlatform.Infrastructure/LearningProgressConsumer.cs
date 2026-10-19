@@ -34,7 +34,7 @@ namespace LearningPlatform.Infrastructure
 
 		protected override async Task ExecuteAsync(CancellationToken stoppingToken)
 		{
-			this._logger.LogWarning("Starting LearningProgressConsumer background service.");
+			this._logger.LogInformation("Starting LearningProgressConsumer background service.");
 
 			var options = new ServiceBusProcessorOptions
 			{
@@ -68,7 +68,7 @@ namespace LearningPlatform.Infrastructure
 			var enrollmentCreatedEvent = JsonSerializer.Deserialize<EnrollmentCreatedEvent>(args.Message.Body.ToString(), _jsonSerializerOptions)
 				?? throw new InvalidOperationException("Learning progress consumer is unable to deserialize EnrollmentCreatedEvent.");
 
-			this._logger.LogWarning("Learning progress consumer processing EnrollmentCreatedEvent SB message. EventId={EventId}, LearnerId={LearnerId}, CourseId={CourseId}",
+			this._logger.LogInformation("Learning progress consumer processing EnrollmentCreatedEvent SB message. EventId={EventId}, LearnerId={LearnerId}, CourseId={CourseId}",
 				enrollmentCreatedEvent.EventId,
 				enrollmentCreatedEvent.LearnerId,
 				enrollmentCreatedEvent.CourseId);
@@ -81,7 +81,7 @@ namespace LearningPlatform.Infrastructure
 			// Invoke the idempotent business operation; the business/data layers ensure that a redelivered Service Bus message does not repeat the business effect.
 			var isDuplicate = await learningProgressService.ProcessEnrollmentCreated(enrollmentCreatedEvent, args.CancellationToken);
 
-			this._logger.LogWarning("Processed EnrollmentCreated message. MessageId={MessageId}, DeliveryCount={DeliveryCount}, IsDuplicate={IsDuplicate}",
+			this._logger.LogInformation("Processed EnrollmentCreated message. MessageId={MessageId}, DeliveryCount={DeliveryCount}, IsDuplicate={IsDuplicate}",
 				args.Message.MessageId,
 				args.Message.DeliveryCount,
 				isDuplicate);
@@ -96,7 +96,7 @@ namespace LearningPlatform.Infrastructure
 			// Complete the delivered message after processing (without this, the delivered message will be redelivered after the lock expires, or if/when the processor abandons/releases the message).
 			await args.CompleteMessageAsync(args.Message, args.CancellationToken);
 
-			this._logger.LogWarning("Learning progress consumer completed EnrollmentCreatedEvent SB message.");
+			this._logger.LogInformation("Learning progress consumer completed EnrollmentCreatedEvent SB message.");
 		}
 
 		private Task ProcessErrorAsync(ProcessErrorEventArgs args)

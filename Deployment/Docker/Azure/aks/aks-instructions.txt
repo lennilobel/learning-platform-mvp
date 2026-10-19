@@ -236,3 +236,33 @@ kubectl get services
 :Kill the API pod and watch a new replica come online automatically
 kubectl get pods
 kubectl delete pod learning-platform-api-7c87998f49-hscjf
+
+
+
+:Add the Foundry User role to the AKS API UAMI at the lenni-openai resource scope, allowing the API to access the Foundry resource.
+az role assignment create ^
+  --assignee-object-id "f34c5fb8-359b-4224-b277-aa1f54fd40fe" ^
+  --assignee-principal-type ServicePrincipal ^
+  --role "53ca6127-db72-4b80-b1b0-d745d6d5456d" ^
+  --scope "/subscriptions/6327c571-12f0-4634-9d3e-404ad37e6be9/resourceGroups/ai-demos-rg/providers/Microsoft.CognitiveServices/accounts/lenni-openai"
+{
+  "condition": null,
+  "conditionVersion": null,
+  "createdBy": null,
+  "createdOn": "2026-10-19T14:14:13.477246+00:00",
+  "delegatedManagedIdentityResourceId": null,
+  "description": null,
+  "id": "/subscriptions/6327c571-12f0-4634-9d3e-404ad37e6be9/resourceGroups/ai-demos-rg/providers/Microsoft.CognitiveServices/accounts/lenni-openai/providers/Microsoft.Authorization/roleAssignments/0b165354-df0a-408f-ba04-8ebf22c03b9d",
+  "name": "0b165354-df0a-408f-ba04-8ebf22c03b9d",
+  "principalId": "f34c5fb8-359b-4224-b277-aa1f54fd40fe",
+  "principalType": "ServicePrincipal",
+  "resourceGroup": "ai-demos-rg",
+  "roleDefinitionId": "/subscriptions/6327c571-12f0-4634-9d3e-404ad37e6be9/providers/Microsoft.Authorization/roleDefinitions/53ca6127-db72-4b80-b1b0-d745d6d5456d",
+  "scope": "/subscriptions/6327c571-12f0-4634-9d3e-404ad37e6be9/resourceGroups/ai-demos-rg/providers/Microsoft.CognitiveServices/accounts/lenni-openai",
+  "type": "Microsoft.Authorization/roleAssignments",
+  "updatedBy": "ee117291-5473-48b1-856d-1c091abd8353",
+  "updatedOn": "2026-10-19T14:14:13.839250+00:00"
+}
+
+:Restart the API deployment
+kubectl rollout restart deployment/learning-platform-api -n learning-platform

@@ -29,7 +29,7 @@ namespace LearningPlatform.BusinessLogic.LearningProgress
 			// Duplicate check is required for idempotency, because the Service Bus subscription may redeliver the same message if the consumer fails to complete it (e.g., if the consumer crashes or throws an exception before calling CompleteMessageAsync)
 			var isDuplicate = await this._learningProgressRepository.ProcessEnrollmentCreated(enrollmentCreatedEvent, cancellationToken);
 
-			this._logger.LogWarning("Processed EnrollmentCreated business logic. EventId={EventId}, LearnerId={LearnerId}, CourseId={CourseId}, IsDuplicate={IsDuplicate}",
+			this._logger.LogInformation("Processed EnrollmentCreated business logic. EventId={EventId}, LearnerId={LearnerId}, CourseId={CourseId}, IsDuplicate={IsDuplicate}",
 				enrollmentCreatedEvent.EventId,
 				enrollmentCreatedEvent.LearnerId,
 				enrollmentCreatedEvent.CourseId,

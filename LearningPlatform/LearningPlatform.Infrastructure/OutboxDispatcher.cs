@@ -21,7 +21,7 @@ namespace LearningPlatform.Infrastructure
 
 		protected override async Task ExecuteAsync(CancellationToken stoppingToken)
 		{
-			this._logger.LogWarning("Starting OutboxDispatcher background service.");
+			this._logger.LogInformation("Starting OutboxDispatcher background service.");
 
 			while (!stoppingToken.IsCancellationRequested)
 			{
@@ -32,7 +32,7 @@ namespace LearningPlatform.Infrastructure
 				await outboxService.ProcessOutbox(stoppingToken);
 
 				// Wait for a short period before checking for new messages again
-				this._logger.LogWarning("OutboxDispatcher sleeping for 5 seconds before checking for new messages.");
+				this._logger.LogInformation("OutboxDispatcher sleeping for 5 seconds before checking for new messages.");
 				await Task.Delay(TimeSpan.FromSeconds(5), stoppingToken);
 			}
 		}
