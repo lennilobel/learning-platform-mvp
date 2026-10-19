@@ -3,6 +3,7 @@ import { Link, Route, Routes } from 'react-router'
 import './App.css'
 import EnrollmentPage from './EnrollmentPage'
 import Home from './HomePage'
+import RecommendationsPage from './RecommendationsPage'
 
 function App(): React.JSX.Element {
     const { instance, accounts } = useMsal()
@@ -12,8 +13,9 @@ function App(): React.JSX.Element {
             <nav>
                 <Link className='nav-link' to="/">Home</Link>
                 <Link className='nav-link' to="/enrollment">Enrollment</Link>
-                <span>
-                    Signed in as {account?.name ?? account?.username}
+                <Link className='nav-link' to="/recommendations">Recommendations</Link>
+                <span className='signed-in'>
+                    Signed in as {account?.name ?? account?.username}&nbsp;
                 </span>
                 <button
                     type="button"
@@ -28,6 +30,7 @@ function App(): React.JSX.Element {
             <Routes>
                 <Route path="/" element={<Home />} />
                 <Route path="/enrollment" element={<EnrollmentPage />} />
+                <Route path="/recommendations" element={<RecommendationsPage />} />
             </Routes>
         </>
     )
