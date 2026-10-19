@@ -1,4 +1,5 @@
-﻿CREATE PROCEDURE dbo.GetUnpublishedOutboxMessages
+﻿
+CREATE PROCEDURE dbo.GetUnpublishedOutboxMessages
     @BatchSize int
 AS
 BEGIN
@@ -14,3 +15,12 @@ BEGIN
     ORDER BY OutboxSequence
 
 END
+GO
+GRANT EXECUTE ON OBJECT::dbo.[GetUnpublishedOutboxMessages] TO [uami-learningplatform-outbox-aks] AS dbo
+GO
+GRANT EXECUTE ON OBJECT::dbo.[GetUnpublishedOutboxMessages] TO [learning-platform-docker-local] AS dbo
+GO
+GRANT EXECUTE ON OBJECT::dbo.[GetUnpublishedOutboxMessages] TO [ca-learningplatform-outbox] AS dbo
+GO
+GRANT EXECUTE ON OBJECT::dbo.[GetUnpublishedOutboxMessages] TO [app-learningplatform-api] AS dbo
+GO

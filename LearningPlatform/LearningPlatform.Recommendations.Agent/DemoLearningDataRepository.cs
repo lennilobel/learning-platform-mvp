@@ -2,20 +2,20 @@
 
 namespace LearningPlatform.Recommendations.Agent
 {
-	public sealed class DemoLearningData
+	public sealed class DemoLearningDataRepository : ILearningDataRepository
 	{
-		public LearnerContext GetLearnerContext(int learnerId)
+		public Task<LearnerContext> GetLearnerContextAsync(long learnerId, CancellationToken cancellationToken = default)
 		{
 			if (learnerId != 1)
 			{
 				throw new KeyNotFoundException($"Learner {learnerId} was not found.");
 			}
 
-			return new LearnerContext
+			var learnerContext = new LearnerContext
 			{
 				LearnerId = learnerId,
 				TargetRole = "Azure Developer",
-				CompletedCourseIds = new HashSet<int>
+				CompletedCourseIds = new HashSet<long>
 				{
 					100
 				},
@@ -25,18 +25,21 @@ namespace LearningPlatform.Recommendations.Agent
 					"ASP.NET Core"
 				}
 			};
+
+			return Task.FromResult(learnerContext);
 		}
 
-		public IReadOnlyList<Course> GetCourseCatalog()
+		// POC: Load the full catalog. A production implementation should query a reduced candidate set.
+		public Task<IReadOnlyList<Course>> GetCourseCatalogAsync(CancellationToken cancellationToken = default)
 		{
-			return
+			IReadOnlyList<Course> courses =
 			[
 				new Course
 				{
 					CourseId = 100,
 					Title = "C# Fundamentals",
 					Role = "Azure Developer",
-					Skills = new HashSet<string>
+					Skills = new HashSet<string?>
 					{
 						"C#"
 					}
@@ -46,11 +49,11 @@ namespace LearningPlatform.Recommendations.Agent
 					CourseId = 200,
 					Title = "Azure App Service",
 					Role = "Azure Developer",
-					PrerequisiteCourseIds = new HashSet<int>
+					PrerequisiteCourseIds = new HashSet<long>
 					{
 						100
 					},
-					Skills = new HashSet<string>
+					Skills = new HashSet<string?>
 					{
 						"Azure",
 						"App Service"
@@ -61,11 +64,11 @@ namespace LearningPlatform.Recommendations.Agent
 					CourseId = 300,
 					Title = "Advanced AKS",
 					Role = "Azure Developer",
-					PrerequisiteCourseIds = new HashSet<int>
+					PrerequisiteCourseIds = new HashSet<long>
 					{
 						999
 					},
-					Skills = new HashSet<string>
+					Skills = new HashSet<string?>
 					{
 						"AKS",
 						"Kubernetes"
@@ -76,19 +79,22 @@ namespace LearningPlatform.Recommendations.Agent
 					CourseId = 400,
 					Title = "Power BI Fundamentals",
 					Role = "Data Analyst",
-					Skills = new HashSet<string>
+					Skills = new HashSet<string?>
 					{
 						"Power BI",
 						"Data Visualization"
 					}
 				}
 			];
+
+			return Task.FromResult(courses);
 		}
 
-		public Course GetCourse(int courseId)
+		public async Task<Course> GetCourseAsync(long courseId, CancellationToken cancellationToken = default)
 		{
-			var course = this.GetCourseCatalog()
-				.SingleOrDefault(course => course.CourseId == courseId);
+			var courses = await this.GetCourseCatalogAsync(cancellationToken);
+
+			var course = courses.SingleOrDefault(course => course.CourseId == courseId);
 
 			return course
 				?? throw new KeyNotFoundException($"Course {courseId} was not found.");

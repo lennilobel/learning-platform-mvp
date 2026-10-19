@@ -11,7 +11,7 @@ namespace LearningPlatform.Recommendations.Tests
 			{
 				LearnerId = 1,
 				TargetRole = "Azure Developer",
-				CompletedCourseIds = new HashSet<int>
+				CompletedCourseIds = new HashSet<long>
 				{
 					100
 				},
@@ -37,7 +37,7 @@ namespace LearningPlatform.Recommendations.Tests
 					CourseId = 200,
 					Title = "Azure App Service",
 					Role = "Azure Developer",
-					PrerequisiteCourseIds = new HashSet<int>
+					PrerequisiteCourseIds = new HashSet<long>
 					{
 						100
 					}
@@ -48,7 +48,7 @@ namespace LearningPlatform.Recommendations.Tests
 					CourseId = 300,
 					Title = "Advanced AKS",
 					Role = "Azure Developer",
-					PrerequisiteCourseIds = new HashSet<int>
+					PrerequisiteCourseIds = new HashSet<long>
 					{
 						999
 					}

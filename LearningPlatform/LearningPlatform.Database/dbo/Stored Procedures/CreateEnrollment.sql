@@ -39,3 +39,12 @@ BEGIN
     SELECT @IsDuplicate AS IsDuplicate
 
 END
+GO
+GRANT EXECUTE ON OBJECT::dbo.CreateEnrollment TO [uami-learningplatform-api-aks] AS dbo
+GO
+GRANT EXECUTE ON OBJECT::dbo.CreateEnrollment TO [learning-platform-docker-local] AS dbo
+GO
+GRANT EXECUTE ON OBJECT::dbo.CreateEnrollment TO [ca-learningplatform-api] AS dbo
+GO
+GRANT EXECUTE ON OBJECT::dbo.CreateEnrollment TO [app-learningplatform-api] AS dbo
+GO

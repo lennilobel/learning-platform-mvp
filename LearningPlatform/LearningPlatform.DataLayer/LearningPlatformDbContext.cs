@@ -1,6 +1,7 @@
 ﻿using LearningPlatform.DataLayer.Enrollment;
 using LearningPlatform.DataLayer.LearningProgress;
 using LearningPlatform.DataLayer.Outbox;
+using LearningPlatform.DataLayer.Recommendations;
 using Microsoft.EntityFrameworkCore;
 
 namespace LearningPlatform.DataLayer
@@ -18,6 +19,8 @@ namespace LearningPlatform.DataLayer
 			modelBuilder.Entity<CreateEnrollmentResult>().HasNoKey();
 			modelBuilder.Entity<OutboxMessage>().HasNoKey();
 			modelBuilder.Entity<ProcessEnrollmentCreatedResult>().HasNoKey();
+			modelBuilder.Entity<LearnerContextResult>().HasNoKey();
+			modelBuilder.Entity<CourseResult>().HasNoKey();
 		}
 	}
 }

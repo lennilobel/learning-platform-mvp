@@ -62,6 +62,7 @@
     <Folder Include="dbo\Tables\" />
     <Folder Include="dbo\Stored Procedures" />
     <Folder Include="Scripts" />
+    <Folder Include="Security\" />
   </ItemGroup>
   <ItemGroup>
     <Build Include="dbo\Tables\Enrollment.sql" />
@@ -74,6 +75,19 @@
     <Build Include="dbo\Stored Procedures\ProcessEnrollmentCreated.sql" />
     <None Include="Scripts\ConfigureManagedIdentity.sql" />
     <None Include="Scripts\Demos.sql" />
+    <Build Include="dbo\Tables\Skill.sql" />
+    <Build Include="dbo\Tables\LearnerCompletedCourse.sql" />
+    <Build Include="dbo\Tables\Role.sql" />
+    <Build Include="dbo\Tables\Learner.sql" />
+    <Build Include="dbo\Tables\LearnerSkill.sql" />
+    <Build Include="dbo\Tables\Course.sql" />
+    <Build Include="dbo\Tables\CourseSkill.sql" />
+    <Build Include="dbo\Tables\CoursePrerequisite.sql" />
+    <None Include="Scripts\InitializeRecommendationData.sql" />
+    <Build Include="Security\ExternalUsers.sql" />
+    <Build Include="dbo\Stored Procedures\GetLearnerContext.sql" />
+    <Build Include="dbo\Stored Procedures\GetCourseCatalog.sql" />
+    <Build Include="dbo\Stored Procedures\GetCourse.sql" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Proj2Azure.scmp" />

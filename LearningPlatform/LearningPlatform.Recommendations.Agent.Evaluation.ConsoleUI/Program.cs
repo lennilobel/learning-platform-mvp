@@ -27,11 +27,11 @@ namespace LearningPlatform.Recommendations.Agent.Evaluation.ConsoleUI
 
 			var recommendationService = new RecommendationService(eligibilityService, courseRanker);
 
-			var learningData = new DemoLearningData();
+			var learningDataRepository = new DemoLearningDataRepository();
 
-			var recommendationTools = new RecommendationTools(recommendationService, learningData);
+			var recommendationTools = new RecommendationTools(recommendationService, learningDataRepository);
 
-			var agent = RecommendationAgentFactory.Create(endpoint, deploymentName, recommendationTools);
+			var agent = RecommendationAgentFactory.Create(endpoint, deploymentName, recommendationTools);	// Omitting enrollment tools suppresses the HITL flow.
 
 			var localResults = await RunDeterministicEvaluation(agent);
 			ShowResults(localResults);
@@ -106,34 +106,34 @@ namespace LearningPlatform.Recommendations.Agent.Evaluation.ConsoleUI
 					//EvalChecks.ToolCallArgsMatch(),
 
 					// Expect GetLearnerProfile to be called with learnerId = 1.
-					CreateFirstIntToolArgumentCheck(
+					CreateFirstToolArgumentCheck<long>(
 						toolName: nameof(RecommendationTools.GetLearnerProfile),
 						argumentName: "learnerId",
-						expectedValue: 1),
+						expectedValue: 1L),
 
 					// Expect GetRecommendations to be called with learnerId = 1.
-					CreateFirstIntToolArgumentCheck(
+					CreateFirstToolArgumentCheck<long>(
 						toolName: nameof(RecommendationTools.GetRecommendations),
 						argumentName: "learnerId",
-						expectedValue: 1),
+						expectedValue: 1L),
 
 					// Expect GetRecommendations to be called with maxResults = 2.
-					CreateFirstIntToolArgumentCheck(
+					CreateFirstToolArgumentCheck<int>(
 						toolName: nameof(RecommendationTools.GetRecommendations),
 						argumentName: "maxResults",
 						expectedValue: 2),
 
 					// Expect GetCourseDetails to be called at least once with courseId = 200.
-					CreateAnyIntToolArgumentCheck(
+					CreateAnyToolArgumentCheck<long>(
 						toolName: nameof(RecommendationTools.GetCourseDetails),
 						argumentName: "courseId",
-						expectedValue: 200),
+						expectedValue: 200L),
 
 					// Expect GetCourseDetails to be called at least once with courseId = 400.
-					CreateAnyIntToolArgumentCheck(
+					CreateAnyToolArgumentCheck<long>(
 						toolName: nameof(RecommendationTools.GetCourseDetails),
 						argumentName: "courseId",
-						expectedValue: 400),
+						expectedValue: 400L),
 
 					// Expect all of these keywords to appear in output.
 					EvalChecks.KeywordCheck(
@@ -163,7 +163,7 @@ namespace LearningPlatform.Recommendations.Agent.Evaluation.ConsoleUI
 			//			nameof(RecommendationTools.GetLearnerProfile),
 			//			new Dictionary<string, object>
 			//			{
-			//				["learnerId"] = 1
+			//				["learnerId"] = 1L
 			//			}
 			//		)
 			//	}
@@ -239,8 +239,8 @@ namespace LearningPlatform.Recommendations.Agent.Evaluation.ConsoleUI
 			return results;
 		}
 
-		// Check the first call to a tool for the expected integer argument value.
-		private static EvalCheck CreateFirstIntToolArgumentCheck(string toolName, string argumentName, int expectedValue)
+		// Check the first call to a tool for the expected argument value.
+		private static EvalCheck CreateFirstToolArgumentCheck<T>(string toolName, string argumentName, T expectedValue)
 		{
 			var checkName = $"{toolName}_{argumentName}_check";
 
@@ -261,22 +261,33 @@ namespace LearningPlatform.Recommendations.Agent.Evaluation.ConsoleUI
 					return new EvalCheckResult(Passed: false, Reason: $"{toolName} did not contain argument: {argumentName}", checkName);
 				}
 
-				if (argumentValue is not JsonElement element || element.ValueKind != JsonValueKind.Number || !element.TryGetInt32(out var actualValue))
+				if (argumentValue is not JsonElement element)
 				{
-					return new EvalCheckResult(Passed: false, Reason: $"{toolName}.{argumentName} was not an Int32 JSON number.", checkName);
+					return new EvalCheckResult(Passed: false, Reason: $"{toolName}.{argumentName} was not a JSON value.", checkName);
 				}
 
-				if (actualValue != expectedValue)
+				T? actualValue;
+
+				try
 				{
-					return new EvalCheckResult(Passed: false, Reason: $"{toolName}.{argumentName} expected {expectedValue}, actual {actualValue}", checkName);
+					actualValue = element.Deserialize<T>();
+				}
+				catch (JsonException)
+				{
+					return new EvalCheckResult(Passed: false, Reason: $"{toolName}.{argumentName} could not be converted to {typeof(T).Name}.", checkName);
 				}
 
-				return new EvalCheckResult(Passed: true, Reason: $"{toolName}.{argumentName} matched expected value: {expectedValue}", checkName);
+				if (!EqualityComparer<T>.Default.Equals(actualValue, expectedValue))
+				{
+					return new EvalCheckResult(Passed: false, Reason: $"{toolName}.{argumentName} (first call) expected {expectedValue}, actual {actualValue}", checkName);
+				}
+
+				return new EvalCheckResult(Passed: true, Reason: $"{toolName}.{argumentName} (first call) matched expected value: {expectedValue}", checkName);
 			});
 		}
 
-		// Check all calls to a tool for one containing the expected integer argument value.
-		private static EvalCheck CreateAnyIntToolArgumentCheck(string toolName, string argumentName, int expectedValue)
+		// Check all calls to a tool for one containing the expected argument value.
+		private static EvalCheck CreateAnyToolArgumentCheck<T>(string toolName, string argumentName, T expectedValue)
 		{
 			var checkName = $"{toolName}_{argumentName}_{expectedValue}_check";
 
@@ -289,18 +300,29 @@ namespace LearningPlatform.Recommendations.Agent.Evaluation.ConsoleUI
 
 				foreach (var toolCall in toolCalls)
 				{
-					if (toolCall.Arguments is null || !toolCall.Arguments.TryGetValue(argumentName, out var argumentValue))
+					if (toolCall.Arguments is null || !toolCall.Arguments.TryGetValue(argumentName, out var argumentValue) || argumentValue is not JsonElement element)
 					{
 						continue;
 					}
 
-					if (argumentValue is JsonElement element && element.ValueKind == JsonValueKind.Number && element.TryGetInt32(out var actualValue) && actualValue == expectedValue)
+					T? actualValue;
+
+					try
 					{
-						return new EvalCheckResult(Passed: true, Reason: $"{toolName}.{argumentName} contained expected value: {expectedValue}", checkName);
+						actualValue = element.Deserialize<T>();
+					}
+					catch (JsonException)
+					{
+						continue;
+					}
+
+					if (EqualityComparer<T>.Default.Equals(actualValue, expectedValue))
+					{
+						return new EvalCheckResult(Passed: true, Reason: $"{toolName}.{argumentName} (any call) contained expected value: {expectedValue}", checkName);
 					}
 				}
 
-				return new EvalCheckResult(Passed: false, Reason: $"{toolName}.{argumentName} never contained expected value: {expectedValue}", checkName);
+				return new EvalCheckResult(Passed: false, Reason: $"{toolName}.{argumentName} (any call) never contained expected value: {expectedValue}", checkName);
 			});
 		}
 
@@ -322,14 +344,8 @@ namespace LearningPlatform.Recommendations.Agent.Evaluation.ConsoleUI
 				projectClient,
 				deploymentName,
 				FoundryEvals.ResponseCompleteness,
-				FoundryEvals.ToolOutputUtilization); 
-			
-			//var foundryEvaluator = new FoundryEvals(
-			//	projectClient,
-			//	deploymentName,
-			//	FoundryEvals.ResponseCompleteness,
-			//	FoundryEvals.TaskAdherence,
-			//	FoundryEvals.ToolOutputUtilization);
+				FoundryEvals.TaskAdherence,
+				FoundryEvals.ToolOutputUtilization);
 
 			var foundryResults = await foundryEvaluator.EvaluateAsync(
 				items: localResults.InputItems ?? throw new InvalidOperationException("Evaluation input items are unavailable."),

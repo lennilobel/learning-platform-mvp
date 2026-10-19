@@ -7,8 +7,25 @@ namespace LearningPlatform.Recommendations.Agent
 {
 	public static class RecommendationAgentFactory
 	{
-		public static ChatClientAgent Create(string endpoint, string deploymentName, RecommendationTools recommendationTools)
+		public static ChatClientAgent Create(
+			string endpoint,
+			string deploymentName,
+			RecommendationTools recommendationTools,
+			EnrollmentTools? enrollmentTools = null)    // Optionally accept the enrollment tools. This lets the evaluation agent remain read-only while the actual console gets HITL enrollment.
 		{
+			var tools = new List<AITool>
+			{
+				AIFunctionFactory.Create(recommendationTools.GetLearnerProfile),
+				AIFunctionFactory.Create(recommendationTools.GetRecommendations),
+				AIFunctionFactory.Create(recommendationTools.GetCourseDetails)
+			};
+
+			if (enrollmentTools is not null)
+			{
+				// HITL (human-in-the-loop)
+				tools.Add(new ApprovalRequiredAIFunction(AIFunctionFactory.Create(enrollmentTools.EnrollLearner)));
+			}
+
 			// Note: concrete class ChatClientAgent derives from abstract base class AIAgent.
 			// AIAgentBuilder can then compose an AIAgent pipeline around that underlying agent.
 			var agent =
@@ -38,15 +55,7 @@ namespace LearningPlatform.Recommendations.Agent
 						Use GetCourseDetails when detailed information about
 						a course is needed.
 					""",
-					tools:
-					[
-						AIFunctionFactory.Create(recommendationTools.GetLearnerProfile),
-						AIFunctionFactory.Create(recommendationTools.GetRecommendations),
-						AIFunctionFactory.Create(recommendationTools.GetCourseDetails),
-						new ApprovalRequiredAIFunction(
-							AIFunctionFactory.Create(recommendationTools.EnrollLearner)
-						)
-					])
+					tools: tools)
 			;
 
 			// Return the ChatClientAgent, which then acts as the underlying agent for a composed an agent pipeline (e.g., to include OpenTelemetry).

@@ -1,5 +1,13 @@
-﻿using Microsoft.Agents.AI;
+﻿#define HITL	// Human-In-The-Loop
+
+using LearningPlatform.BusinessLogic.Enrollments;
+using LearningPlatform.DataLayer;
+using LearningPlatform.DataLayer.Enrollment;
+using LearningPlatform.DataLayer.Recommendations;
+using Microsoft.Agents.AI;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.AI;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using OpenTelemetry;
 using OpenTelemetry.Trace;
@@ -14,33 +22,43 @@ namespace LearningPlatform.Recommendations.Agent.ConsoleUI
 
 			var builder = Host.CreateApplicationBuilder(args);
 
+			builder.Services.AddDbContext<LearningPlatformDbContext>(options =>
+				options.UseSqlServer(
+					builder.Configuration.GetSection("ConnectionStrings")["LearningPlatform"]));
+
+			builder.Services.AddSingleton<ICourseRanker, WeightedCourseRanker>();
+			builder.Services.AddSingleton<IEligibilityService, EligibilityService>();
+			builder.Services.AddSingleton<IRecommendationService, RecommendationService>();
+
+			builder.Services.AddScoped<IEnrollmentRepository, EnrollmentRepository>();
+			builder.Services.AddScoped<IEnrollmentService, EnrollmentService>();
+			builder.Services.AddScoped<ILearningDataRepository, SqlLearningDataRepository>();
+
+			builder.Services.AddScoped<EnrollmentTools>();
+			builder.Services.AddScoped<RecommendationTools>();
+
 			var endpoint = builder.Configuration["Foundry:ProjectEndpoint"]
 				?? throw new InvalidOperationException("Foundry:ProjectEndpoint is not configured.");
 
 			var deploymentName = builder.Configuration["Foundry:Model"]
 				?? throw new InvalidOperationException("Foundry:Model is not configured.");
 
-			var eligibilityService = new EligibilityService();
-			var courseRanker = new WeightedCourseRanker();
+			using var host = builder.Build();
+			using var scope = host.Services.CreateScope();
 
-			var recommendationService = new RecommendationService(eligibilityService, courseRanker);
+			var recommendationTools = scope.ServiceProvider.GetRequiredService<RecommendationTools>();
+			var enrollmentTools = scope.ServiceProvider.GetRequiredService<EnrollmentTools>();
 
-			var learningData = new DemoLearningData();
+			// Give us a ChatClientAgent for our composed agent pipeline. Including enrollment tools enables HITL flow.
+			var baseAgent = RecommendationAgentFactory.Create(endpoint, deploymentName, recommendationTools, enrollmentTools);
 
-			var recommendationTools = new RecommendationTools(recommendationService, learningData);
-
-			// Give us a ChatClientAgent for our composed agent pipeline.
-			var baseAgent = RecommendationAgentFactory.Create(endpoint, deploymentName, recommendationTools);
-
-			var agent =
-				baseAgent
-				.AsBuilder()                                // Gives us an AIAgentBuilder so we can build the agent pipeline.
-				.UseOpenTelemetry(
+			var agent = baseAgent
+				.AsBuilder()                                // Get an AIAgentBuilder so we can build the agent pipeline around the ChatClientAgent.
+				.UseOpenTelemetry(							// Add OpenTelementry instrumentation to the AI agent.
 					sourceName: SourceName,
 					configure: options =>
 						options.EnableSensitiveData = true) // Useful for controlled development; generally avoid in production.
-				.Build();                                   // Gives us an AIAgent representing a composed agent pipeline
-															// that wraps the original ChatClientAgent and adds telemetry.
+				.Build();                                   // Get an AIAgent representing a composed agent pipeline that wraps the original ChatClientAgent and adds telemetry.
 
 			// Configure a tracer provider that listens for the agent's telemetry and exports completed activities to the console.
 			using var tracerProvider =
@@ -51,22 +69,8 @@ namespace LearningPlatform.Recommendations.Agent.ConsoleUI
 					.AddProcessor(new SimpleActivityExportProcessor(new ColoredConsoleActivityExporter(ConsoleColor.Cyan)))
 					.Build();
 
-			//// This is a simple agent run without an explicitly managed session.
-			//var response =
-			//	await agent.RunAsync(
-			//		"""
-			//		For learner 1, recommend the best two courses.
-
-			//		Also tell me:
-			//		- the learner's target role,
-			//		- the learner's existing skills,
-			//		- the exact prerequisite course IDs for each recommendation,
-			//		- and all skills developed by each recommended course.
-
-			//		Explain why the first recommendation ranks above the second.
-			//		""");
-
-			//Console.WriteLine(response);
+#if HITL
+			// This agent uses HITL (human-in-the-loop) involvement
 
 			// Use a session so the approval response can continue the same agent interaction.
 			var session = await agent.CreateSessionAsync();
@@ -125,6 +129,24 @@ namespace LearningPlatform.Recommendations.Agent.ConsoleUI
 
 			Console.WriteLine();
 			Console.WriteLine(response);
+#else
+			// This is a simple agent run without an explicitly managed session (no HITL).
+			var response =
+				await agent.RunAsync(
+					"""
+					For learner 1, recommend the best two courses.
+
+					Also tell me:
+					- the learner's target role,
+					- the learner's existing skills,
+					- the exact prerequisite course IDs for each recommendation,
+					- and all skills developed by each recommended course.
+
+					Explain why the first recommendation ranks above the second.
+					""");
+
+			Console.WriteLine(response);
+#endif
 		}
 	}
 }

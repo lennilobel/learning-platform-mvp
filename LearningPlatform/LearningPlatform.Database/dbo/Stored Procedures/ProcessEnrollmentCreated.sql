@@ -37,3 +37,14 @@ BEGIN
     SELECT @IsDuplicate AS IsDuplicate
 
 END
+GO
+GRANT EXECUTE ON OBJECT::dbo.ProcessEnrollmentCreated TO [uami-learningplatform-progress-aks] AS dbo
+GO
+GRANT EXECUTE ON OBJECT::dbo.ProcessEnrollmentCreated TO [learning-platform-docker-local] AS dbo
+GO
+GRANT EXECUTE ON OBJECT::dbo.ProcessEnrollmentCreated TO [func-learningplatform-learningprogress-uami] AS dbo
+GO
+GRANT EXECUTE ON OBJECT::dbo.ProcessEnrollmentCreated TO [ca-learningplatform-progress] AS dbo
+GO
+GRANT EXECUTE ON OBJECT::dbo.ProcessEnrollmentCreated TO [app-learningplatform-api] AS dbo
+GO

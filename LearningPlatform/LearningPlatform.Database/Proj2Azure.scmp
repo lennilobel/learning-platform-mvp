@@ -9,7 +9,7 @@
   </SourceModelProvider>
   <TargetModelProvider>
     <ConnectionBasedModelProvider>
-      <ConnectionString>Data Source=lennidemo.database.windows.net;Initial Catalog=LearningPlatform;Persist Security Info=True;User ID=saz;Pooling=False;Multiple Active Result Sets=False;Connect Timeout=60;Encrypt=True;Trust Server Certificate=True;Command Timeout=0</ConnectionString>
+      <ConnectionString>Data Source=lennidemo.database.windows.net;Initial Catalog=LearningPlatform;Persist Security Info=False;User ID=lenni.lobel@sleektech.com;Pooling=False;Multiple Active Result Sets=False;Encrypt=True;Trust Server Certificate=False;Authentication=ActiveDirectoryInteractive;Command Timeout=0</ConnectionString>
     </ConnectionBasedModelProvider>
   </TargetModelProvider>
   <SchemaCompareSettingsService>

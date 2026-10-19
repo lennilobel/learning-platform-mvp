@@ -15,6 +15,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\LearningPlatform.DataLayer\LearningPlatform.DataLayer.csproj" />
     <ProjectReference Include="..\LearningPlatform.Recommendations.Agent\LearningPlatform.Recommendations.Agent.csproj" />
     <ProjectReference Include="..\LearningPlatform.Recommendations\LearningPlatform.Recommendations.csproj" />
   </ItemGroup>

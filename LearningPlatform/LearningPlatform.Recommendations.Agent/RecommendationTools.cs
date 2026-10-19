@@ -6,14 +6,14 @@ namespace LearningPlatform.Recommendations.Agent
 	public sealed class RecommendationTools
 	{
 		private readonly IRecommendationService _recommendationService;
-		private readonly DemoLearningData _learningData;
+		private readonly ILearningDataRepository _learningDataRepository;
 
 		public RecommendationTools(
 			IRecommendationService recommendationService,
-			DemoLearningData learningData)
+			ILearningDataRepository learningDataRepository)
 		{
 			this._recommendationService = recommendationService;
-			this._learningData = learningData;
+			this._learningDataRepository = learningDataRepository;
 		}
 
 		// Note the use of the [Description] attribute. Traditionally, the [Description] attribute
@@ -27,10 +27,10 @@ namespace LearningPlatform.Recommendations.Agent
 		// that the type system alone cannot convey.
 
 		[Description("Gets a learner's profile, including target role, completed courses, and current skills.")]
-		public string GetLearnerProfile(
-			[Description("The learner ID.")] int learnerId)
+		public async Task<string> GetLearnerProfile(
+			[Description("The learner ID.")] long learnerId)
 		{
-			var learnerContext = this._learningData.GetLearnerContext(learnerId);
+			var learnerContext = await this._learningDataRepository.GetLearnerContextAsync(learnerId);
 
 			// Return the profile based on the complete learner context.
 			var learnerProfileJson = JsonSerializer.Serialize(learnerContext);
@@ -39,15 +39,15 @@ namespace LearningPlatform.Recommendations.Agent
 		}
 
 		[Description("Gets the highest-ranked eligible course recommendations for a learner.")]
-		public string GetRecommendations(
-			[Description("The learner ID.")] int learnerId,
+		public async Task<string> GetRecommendations(
+			[Description("The learner ID.")] long learnerId,
 			[Description("The maximum number of recommendations to return.")] int maxResults)
 		{
 			ArgumentOutOfRangeException.ThrowIfNegativeOrZero(maxResults);
 
-			var learnerContext = this._learningData.GetLearnerContext(learnerId);
+			var learnerContext = await this._learningDataRepository.GetLearnerContextAsync(learnerId);
 
-			var courses = this._learningData.GetCourseCatalog();
+			var courses = await this._learningDataRepository.GetCourseCatalogAsync();
 
  			var recommendations = this._recommendationService
 				.GetRecommendations(learnerContext, courses)
@@ -70,32 +70,15 @@ namespace LearningPlatform.Recommendations.Agent
 		}
 
 		[Description("Gets detailed information about a specific course, including its role, skills, active status, and prerequisites.")]
-		public string GetCourseDetails(
-			[Description("The course ID.")] int courseId)
+		public async Task<string> GetCourseDetails(
+			[Description("The course ID.")] long courseId)
 		{
-			var course = this._learningData.GetCourse(courseId);
+			var course = await this._learningDataRepository.GetCourseAsync(courseId);
 
 			// Return the course details based on the complete course entity.
 			var courseDetailsJson = JsonSerializer.Serialize(course);
 
 			return courseDetailsJson;
-		}
-
-		private readonly HashSet<(int LearnerId, int CourseId)> _enrollments = [];
-
-		[Description("Enrolls a learner in a course.")]
-		public string EnrollLearner(
-			[Description("The learner ID.")] int learnerId,
-			[Description("The course ID.")] int courseId)
-		{
-			var enrollment = (LearnerId: learnerId, CourseId: courseId);
-
-			if (!this._enrollments.Add(enrollment))
-			{
-				return $"Learner {learnerId} is already enrolled in course {courseId}.";
-			}
-
-			return $"Learner {learnerId} was enrolled in course {courseId}.";
 		}
 
 	}
